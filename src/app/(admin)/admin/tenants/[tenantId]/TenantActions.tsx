@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, Play } from "lucide-react";
 
 interface Props {
   tenantId: string;
   status: string;
   possibleTransitions: string[];
+  hasDograhMapping: boolean;
 }
 
 const actionConfig: Record<string, { endpoint: string; label: string; variant: "default" | "destructive" | "outline" }> = {
@@ -19,7 +20,7 @@ const actionConfig: Record<string, { endpoint: string; label: string; variant: "
   paused: { endpoint: "pause", label: "Pause", variant: "destructive" },
 };
 
-export default function TenantActions({ tenantId, status, possibleTransitions }: Props) {
+export default function TenantActions({ tenantId, status, possibleTransitions, hasDograhMapping }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -100,6 +101,18 @@ export default function TenantActions({ tenantId, status, possibleTransitions }:
           }
           return null;
         })}
+        {hasDograhMapping && (status === "pending_approval" || status === "provisioning_failed" || status === "ready") && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading !== null}
+            onClick={() => act("provision", "provision")}
+            className="gap-1"
+          >
+            <Play className="h-3.5 w-3.5" />
+            {loading === "provision" ? "Provisioning..." : status === "provisioning_failed" ? "Retry Provisioning" : "Run Provisioning"}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

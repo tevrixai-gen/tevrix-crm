@@ -75,6 +75,7 @@ export default async function TenantDetailPage({ params }: Props) {
         tenantId={tenantId}
         status={tenant.status}
         possibleTransitions={possibleTransitions}
+        hasDograhMapping={!!tenant.dograhOrgId && !!tenant.dograhApiKeyCiphertext}
       />
 
       {/* Tenant Info */}
