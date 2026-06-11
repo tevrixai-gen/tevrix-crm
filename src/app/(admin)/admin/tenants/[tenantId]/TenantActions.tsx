@@ -12,14 +12,6 @@ interface Props {
   hasDograhMapping: boolean;
 }
 
-const actionConfig: Record<string, { endpoint: string; label: string; variant: "default" | "destructive" | "outline" }> = {
-  pending_approval: { endpoint: "approve", label: "Approve", variant: "default" },
-  provisioning: { endpoint: "approve", label: "Start Provisioning", variant: "default" },
-  ready: { endpoint: "approve", label: "Set Ready", variant: "default" },
-  live: { endpoint: "resume", label: "Resume (Go Live)", variant: "default" },
-  paused: { endpoint: "pause", label: "Pause", variant: "destructive" },
-};
-
 export default function TenantActions({ tenantId, status, possibleTransitions, hasDograhMapping }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);

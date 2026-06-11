@@ -37,7 +37,10 @@ export default function CallDetailPage() {
     if (res.ok) setCall((await res.json()).call);
   }, [callId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const t = setTimeout(load, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   async function fetchRecording() {
     const res = await fetch(`/api/calls/${callId}/recording`);

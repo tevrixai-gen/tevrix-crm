@@ -21,7 +21,8 @@ export async function GET(
   if (!rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Strip staff-only fields from the client payload
-  const { costUsd: _cost, ...call } = rows[0];
+  const call: Partial<typeof rows[0]> = { ...rows[0] };
+  delete call.costUsd;
   return NextResponse.json({ call: { ...call, hasRecording: !!rows[0].recordingRef } });
 }
 

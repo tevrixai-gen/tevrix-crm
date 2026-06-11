@@ -72,7 +72,7 @@ export default function AgentEditor({ initial }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>Agent's spoken name</Label>
+          <Label>Agent&apos;s spoken name</Label>
           <Input
             value={form.agentName}
             onChange={(e) => update("agentName", e.target.value)}

@@ -9,7 +9,7 @@ export interface PhoneResult {
   error?: string;
 }
 
-export function normalizePhone(raw: string, defaultCountry: "IN" = "IN"): PhoneResult {
+export function normalizePhone(raw: string): PhoneResult {
   if (!raw || typeof raw !== "string") {
     return { ok: false, error: "Empty phone number" };
   }

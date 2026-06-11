@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,6 @@ interface Campaign {
 
 export default function CampaignMonitorPage() {
   const { campaignId } = useParams<{ campaignId: string }>();
-  const router = useRouter();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,9 +40,9 @@ export default function CampaignMonitorPage() {
   }, [campaignId]);
 
   useEffect(() => {
-    load();
+    const first = setTimeout(load, 0);
     const t = setInterval(load, 5_000); // live ticker
-    return () => clearInterval(t);
+    return () => { clearTimeout(first); clearInterval(t); };
   }, [load]);
 
   async function action(path: string) {

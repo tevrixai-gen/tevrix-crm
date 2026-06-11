@@ -14,7 +14,10 @@ export default async function DashboardPage() {
   const { tenantId } = await getTenantContext();
 
   const period = currentPeriod();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000);
+  // Server component: rendered per request, so reading the clock is fine.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const sevenDaysAgo = new Date(now - 7 * 86400_000);
 
   const [callCount, connectedCount, qualifiedCount, usage, attention, dailyRaw, tenantRow] =
     await Promise.all([
@@ -63,7 +66,7 @@ export default async function DashboardPage() {
   const dayMap = new Map(dailyRaw.map((d) => [d.day, d.count]));
   const series: Array<{ label: string; value: number }> = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400_000);
+    const d = new Date(now - i * 86400_000);
     const key = d.toISOString().slice(0, 10);
     series.push({
       label: d.toLocaleDateString("en-IN", { weekday: "short" }),

@@ -5,6 +5,7 @@ import { leads, importBatches } from "@/lib/db/schema";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { parseCsv } from "@/lib/csv";
 import { normalizePhone } from "@/lib/phone";
+import { rateLimit } from "@/lib/rate-limit";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const INSERT_CHUNK = 500;
@@ -21,6 +22,15 @@ interface RowError {
 export async function POST(req: NextRequest) {
   const { error, tenant } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
+
+  // Imports are heavy; cap per tenant
+  const rl = rateLimit(`import:${tenant!.id}`, 10, 60 * 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Import limit reached. Try again in ${Math.ceil(rl.retryAfterSeconds / 60)} minutes.` },
+      { status: 429 }
+    );
+  }
 
   const formData = await req.formData();
   const file = formData.get("file");

@@ -3,10 +3,21 @@ import { db } from "@/lib/db";
 import { webhookInbox, tenants } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyHmac } from "@/lib/dograh/hmac";
+import { rateLimit } from "@/lib/rate-limit";
 
 // POST /api/webhooks/dograh — receives events from the Dograh engine
 // HMAC-verified, idempotent (unique source+external_id), returns 202
 export async function POST(req: NextRequest) {
+  // Generous burst allowance — the inbox absorbs spikes; this only stops abuse
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = rateLimit(`webhook:${ip}`, 600, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
+  }
+
   const rawBody = await req.text();
   const signature = req.headers.get("x-webhook-signature") ?? "";
 

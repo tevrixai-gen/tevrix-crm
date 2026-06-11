@@ -23,6 +23,11 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // enable in prod once email is wired
   },
+  rateLimit: {
+    enabled: true,
+    window: 60, // seconds
+    max: 20,    // auth attempts per window per IP
+  },
   plugins: [
     organization({
       allowUserToCreateOrganization: true,

@@ -8,7 +8,6 @@ import {
   webhookInbox,
   calls,
   leads,
-  campaignLeads,
   campaigns,
   usageLedger,
   tenants,

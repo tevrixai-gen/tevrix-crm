@@ -64,7 +64,10 @@ export default function CallsView() {
     setLoading(false);
   }, [page, outcome, days]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const t = setTimeout(load, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   return (
     <div className="p-6 space-y-6">
