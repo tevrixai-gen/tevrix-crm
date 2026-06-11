@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import { tenants, organization } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { tenants, organization, calls, webhookInbox } from "@/lib/db/schema";
+import { eq, gte, count, and } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
 const statusColors: Record<string, string> = {
@@ -16,17 +17,49 @@ const statusColors: Record<string, string> = {
 };
 
 export default async function AdminQueuePage() {
-  const rows = await db
-    .select({ tenant: tenants, org: organization })
-    .from(tenants)
-    .innerJoin(organization, eq(tenants.organizationId, organization.id))
-    .orderBy(tenants.createdAt);
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+
+  const [rows, callsToday, failedCalls, failedWebhooks, pendingWebhooks] = await Promise.all([
+    db.select({ tenant: tenants, org: organization })
+      .from(tenants)
+      .innerJoin(organization, eq(tenants.organizationId, organization.id))
+      .orderBy(tenants.createdAt),
+    db.select({ count: count() }).from(calls).where(gte(calls.createdAt, midnight)),
+    db.select({ count: count() }).from(calls)
+      .where(and(gte(calls.createdAt, midnight), eq(calls.outcome, "error"))),
+    db.select({ count: count() }).from(webhookInbox).where(eq(webhookInbox.status, "failed")),
+    db.select({ count: count() }).from(webhookInbox).where(eq(webhookInbox.status, "pending")),
+  ]);
+
+  const liveCount = rows.filter((r) => r.tenant.status === "live").length;
+  const pendingCount = rows.filter((r) => r.tenant.status === "pending_approval").length;
+
+  const fleet = [
+    { label: "Calls today", value: callsToday[0].count },
+    { label: "Call errors today", value: failedCalls[0].count, alert: failedCalls[0].count > 0 },
+    { label: "Failed webhooks", value: failedWebhooks[0].count, alert: failedWebhooks[0].count > 0 },
+    { label: "Pending webhooks", value: pendingWebhooks[0].count },
+    { label: "Live tenants", value: liveCount },
+    { label: "Awaiting approval", value: pendingCount, alert: pendingCount > 0 },
+  ];
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Approval Queue</h1>
+        <h1 className="text-2xl font-semibold">Fleet &amp; Approval Queue</h1>
         <p className="text-sm text-muted-foreground mt-1">{rows.length} tenants total</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {fleet.map((f) => (
+          <Card key={f.label}>
+            <CardContent className="pt-4 pb-3">
+              <div className={`text-xl font-bold ${f.alert ? "text-destructive" : ""}`}>{f.value}</div>
+              <p className="text-xs text-muted-foreground mt-0.5">{f.label}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="border rounded-lg overflow-hidden">
