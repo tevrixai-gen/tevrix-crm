@@ -1,36 +1,52 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { auth } from "@/lib/auth";
-import { getTenantByUserId } from "@/lib/db/tenant-repo";
+import { getTenantByUserId, getTenantById } from "@/lib/db/tenant-repo";
 import AppSidebar from "@/components/layout/AppSidebar";
+import ImpersonationBanner from "@/components/layout/ImpersonationBanner";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) redirect("/login");
 
-  // Staff bypass — they access /admin routes, not the client (app) shell
-  if (session.user.isStaff) redirect("/admin");
+  // Check for staff impersonation
+  const cookieStore = await cookies();
+  const impersonationCookie = cookieStore.get("impersonation");
+  let impersonation: { staffUserId: string; tenantId: string; tenantName: string } | null = null;
+  let tenant = null;
 
-  const tenant = await getTenantByUserId(session.user.id);
+  if (impersonationCookie && (session.user as { isStaff?: boolean }).isStaff) {
+    impersonation = JSON.parse(impersonationCookie.value);
+    tenant = await getTenantById(impersonation!.tenantId);
+  } else if ((session.user as { isStaff?: boolean }).isStaff) {
+    redirect("/admin");
+  } else {
+    tenant = await getTenantByUserId(session.user.id);
+  }
 
   if (!tenant) redirect("/onboarding");
 
-  if (tenant.status === "created" || tenant.status === "pending_approval") {
+  if (!impersonation && (tenant.status === "created" || tenant.status === "pending_approval")) {
     redirect("/pending");
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <AppSidebar tenant={tenant} user={session.user} />
-      <main className="flex-1 overflow-y-auto bg-background">
-        {tenant.status === "paused" && (
-          <div className="bg-warning/10 border-b border-warning/20 px-6 py-2 text-sm text-warning-foreground">
-            Your account is paused. Contact support to resume.
-          </div>
-        )}
-        {children}
-      </main>
+    <div className="flex flex-col h-screen overflow-hidden">
+      {impersonation && (
+        <ImpersonationBanner tenantName={impersonation.tenantName ?? "Unknown"} />
+      )}
+      <div className="flex flex-1 overflow-hidden">
+        <AppSidebar tenant={tenant} user={session.user} />
+        <main className="flex-1 overflow-y-auto bg-background">
+          {!impersonation && tenant.status === "paused" && (
+            <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2 text-sm text-yellow-800">
+              Your account is paused. Contact support to resume.
+            </div>
+          )}
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
