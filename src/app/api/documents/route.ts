@@ -73,15 +73,15 @@ export async function POST(req: NextRequest) {
       process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000",
       tenant!.dograhApiKeyCiphertext
     );
-    const engineForm = new FormData();
-    engineForm.append("file", file);
-    const result = await client.uploadDocument(engineForm);
+    const result = await client.uploadDocument(file);
 
     await db
       .update(documents)
       .set({
-        dograhDocRef: String(result.id),
-        status: result.status === "ready" ? "ready" : "processing",
+        dograhDocRef: result.document_uuid,
+        // Dograh processes async (pending → processing → completed); treat
+        // anything not yet failed as still processing on our side.
+        status: result.status === "completed" ? "ready" : "processing",
         updatedAt: new Date(),
       })
       .where(eq(documents.id, doc.id));

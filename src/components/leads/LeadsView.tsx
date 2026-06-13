@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Plus, ChevronLeft, ChevronRight, Ban } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Upload, Plus, ChevronLeft, ChevronRight, Ban, Users } from "lucide-react";
 import AddLeadDialog from "./AddLeadDialog";
 import { formatPhoneDisplay } from "@/lib/phone";
 
@@ -32,11 +32,6 @@ const STATUS_FILTERS = [
   { value: "dnc", label: "DNC" },
 ];
 
-const STATUS_BADGE: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  qualified: "default",
-  dnc: "destructive",
-  not_interested: "outline",
-};
 
 export default function LeadsView() {
   const [rows, setRows] = useState<Lead[]>([]);
@@ -128,9 +123,19 @@ export default function LeadsView() {
           <tbody className="divide-y">
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                  {search || status ? "No leads match your filters." : (
-                    <>No leads yet. Import a CSV or add one manually to get started.</>
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  {search || status ? (
+                    <p className="text-muted-foreground">No leads match your filters.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-medium">No leads yet</p>
+                        <p className="text-sm text-muted-foreground">Import a CSV or add one manually to get started.</p>
+                      </div>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -140,9 +145,7 @@ export default function LeadsView() {
                 <td className="px-4 py-3 font-medium">{lead.name ?? "—"}</td>
                 <td className="px-4 py-3 font-mono text-xs">{formatPhoneDisplay(lead.phone)}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_BADGE[lead.status] ?? "secondary"}>
-                    {lead.status.replace("_", " ")}
-                  </Badge>
+                  <StatusBadge status={lead.status} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(lead.createdAt).toLocaleDateString("en-IN")}

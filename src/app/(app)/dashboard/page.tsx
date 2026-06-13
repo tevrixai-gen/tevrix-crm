@@ -76,10 +76,10 @@ export default async function DashboardPage() {
   const maxVal = Math.max(1, ...series.map((s) => s.value));
 
   const stats = [
-    { label: "Conversations (7d)", value: String(total7d), icon: Phone, sub: "Calls completed" },
-    { label: "Connected", value: `${connectRate}%`, icon: TrendingUp, sub: "Of calls last 7 days" },
-    { label: "Qualified leads", value: String(qualifiedCount[0].count), icon: Users, sub: "Ready for your team" },
-    { label: "Minutes used", value: `${minutesUsed}/${limits.maxMinutesPerMonth}`, icon: Clock, sub: `This month (${period})` },
+    { label: "Conversations (7d)", value: String(total7d), icon: Phone, sub: "Calls completed", accent: "text-blue-600 bg-blue-50" },
+    { label: "Connected", value: `${connectRate}%`, icon: TrendingUp, sub: "Of calls last 7 days", accent: "text-cyan-600 bg-cyan-50" },
+    { label: "Qualified leads", value: String(qualifiedCount[0].count), icon: Users, sub: "Ready for your team", accent: "text-emerald-600 bg-emerald-50" },
+    { label: "Minutes used", value: `${minutesUsed}/${limits.maxMinutesPerMonth}`, icon: Clock, sub: `This month (${period})`, accent: "text-violet-600 bg-violet-50" },
   ];
 
   return (
@@ -95,11 +95,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, sub }) => (
-          <Card key={label}>
+        {stats.map(({ label, value, icon: Icon, sub, accent }) => (
+          <Card key={label} className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${accent}`}>
+                <Icon className="h-4 w-4" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{value}</div>
@@ -111,7 +113,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 7-day activity */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Last 7 days</CardTitle>
           </CardHeader>
@@ -121,7 +123,7 @@ export default async function DashboardPage() {
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <span className="text-xs text-muted-foreground">{s.value || ""}</span>
                   <div
-                    className="w-full bg-primary/70 rounded-t"
+                    className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t"
                     style={{ height: `${Math.max(2, (s.value / maxVal) * 100)}%` }}
                   />
                   <span className="text-xs text-muted-foreground">{s.label}</span>
@@ -132,7 +134,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Needs attention */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Needs your attention</CardTitle>
           </CardHeader>

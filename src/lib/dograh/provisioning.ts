@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { tenants, provisioningRuns } from "@/lib/db/schema";
 import { writeAudit } from "@/lib/db/audit";
-import { createDograhClient, DograhClientError } from "./client";
+import { createDograhClient, DograhClient, DograhClientError } from "./client";
 
 type ProvisioningStep = "verify_key" | "clone_workflow" | "apply_variables" | "register_webhook" | "complete";
 
@@ -67,7 +67,26 @@ export async function runProvisioning(
     .set({ status: "provisioning", updatedAt: new Date() })
     .where(eq(tenants.id, tenantId));
 
-  const client = createDograhClient(dograhBaseUrl, tenant.dograhApiKeyCiphertext);
+  let client: DograhClient;
+  try {
+    client = createDograhClient(dograhBaseUrl, tenant.dograhApiKeyCiphertext);
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    await db
+      .update(tenants)
+      .set({ status: "provisioning_failed", updatedAt: new Date() })
+      .where(eq(tenants.id, tenantId));
+    await recordStep(tenantId, "verify_key", "failed", null, `Key decryption failed: ${errMsg}`);
+    await writeAudit({
+      tenantId,
+      actorId,
+      action: "tenant.provisioning_failed",
+      resourceType: "tenant",
+      resourceId: tenantId,
+      after: { failedStep: "verify_key", error: errMsg },
+    });
+    return { success: false, failedStep: "verify_key", error: `Key decryption failed: ${errMsg}` };
+  }
 
   for (const step of STEP_ORDER) {
     try {

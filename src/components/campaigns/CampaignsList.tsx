@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Plus, Megaphone } from "lucide-react";
 
 interface Campaign {
   id: string;
@@ -17,14 +17,6 @@ interface Campaign {
   createdAt: string;
   launchedAt: string | null;
 }
-
-const STATUS_BADGE: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  running: "default",
-  paused: "outline",
-  cancelled: "destructive",
-  completed: "secondary",
-  draft: "secondary",
-};
 
 export default function CampaignsList() {
   const [rows, setRows] = useState<Campaign[]>([]);
@@ -58,13 +50,18 @@ export default function CampaignsList() {
       </div>
 
       {!loading && rows.length === 0 ? (
-        <div className="border rounded-lg p-12 text-center space-y-3">
-          <p className="text-muted-foreground">No campaigns yet</p>
-          <p className="text-sm text-muted-foreground">
-            Import leads first, then create a campaign and your agent starts calling.
-          </p>
+        <div className="border rounded-lg p-16 text-center space-y-4">
+          <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+            <Megaphone className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-medium">No campaigns yet</p>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Import leads first, then create a campaign and your agent starts calling.
+            </p>
+          </div>
           <Link href="/campaigns/new">
-            <Button size="sm" variant="outline">Create your first campaign</Button>
+            <Button size="sm">Create your first campaign</Button>
           </Link>
         </div>
       ) : (
@@ -88,7 +85,7 @@ export default function CampaignsList() {
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={STATUS_BADGE[c.status] ?? "secondary"}>{c.status}</Badge>
+                    <StatusBadge status={c.status} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {c.calledLeads}/{c.totalLeads} called

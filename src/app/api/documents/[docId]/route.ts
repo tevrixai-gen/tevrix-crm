@@ -29,7 +29,7 @@ export async function DELETE(
         process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000",
         tenant!.dograhApiKeyCiphertext
       );
-      await client.deleteDocument(Number(doc.dograhDocRef));
+      await client.deleteDocument(doc.dograhDocRef);
     } catch {
       // Engine cleanup is best-effort; the local delete proceeds so the
       // client's list stays accurate. Orphans are reconciled later.

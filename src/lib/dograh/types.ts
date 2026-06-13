@@ -62,7 +62,7 @@ export interface DograhCampaign {
 
 export interface DograhCampaignCreateRequest {
   name: string;
-  workflow_id: number;
+  workflow_id: number | string;
   source_type: string;
   source_data: { contacts: Array<{ phone_number: string; context?: Record<string, unknown> }> };
   max_concurrent_calls?: number;
@@ -86,6 +86,8 @@ export interface DograhWebhookEvent {
   event_type: string;
   data: {
     run_id: number;
+    workflow_id?: number;
+    workflow_name?: string;
     campaign_id?: number;
     phone_number?: string;
     status: string;

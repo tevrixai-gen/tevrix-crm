@@ -71,13 +71,23 @@ export async function processInboxEntry(entryId: string): Promise<void> {
       return;
     }
 
-    // Find tenant by matching the run's associated org
-    // For now, we match by looking up tenants with a dograh campaign that references this campaign_id
-    // or we accept the tenant_id from the payload
-    const dograhOrgId = (event as unknown as { dograh_org_id?: string }).dograh_org_id;
+    // Resolve tenant: workflow_id (primary in single-account model),
+    // then dograh_org_id, then campaign_id as fallbacks.
+    const fullPayload = entry[0].payload as Record<string, unknown>;
+    const dograhOrgId = (fullPayload.dograh_org_id ?? (event as unknown as { dograh_org_id?: string }).dograh_org_id) as string | undefined;
+    const workflowId = (data.workflow_id ?? fullPayload.workflow_id) as number | string | undefined;
     let tenantId: string | null = null;
 
-    if (dograhOrgId) {
+    if (workflowId) {
+      const tenant = await db
+        .select({ id: tenants.id })
+        .from(tenants)
+        .where(eq(tenants.dograhWorkflowId, String(workflowId)))
+        .limit(1);
+      tenantId = tenant[0]?.id ?? null;
+    }
+
+    if (!tenantId && dograhOrgId) {
       const tenant = await db
         .select({ id: tenants.id })
         .from(tenants)
@@ -181,8 +191,9 @@ export async function processInboxEntry(entryId: string): Promise<void> {
       }
     }
 
-    // Bump usage ledger
-    const period = new Date().toISOString().slice(0, 7);
+    // Bump usage ledger — derive period from event time, not projection time
+    const eventTime = data.completed_at ? new Date(data.completed_at as string) : new Date();
+    const period = eventTime.toISOString().slice(0, 7);
     const minutes = data.duration ? Math.ceil(data.duration / 60) : 0;
 
     const existingUsage = await db

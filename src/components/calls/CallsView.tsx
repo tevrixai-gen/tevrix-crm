@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ChevronLeft, ChevronRight, Mic, Phone } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
 
 interface CallRow {
@@ -27,12 +27,6 @@ const OUTCOME_FILTERS = [
   { value: "failed", label: "Failed" },
 ];
 
-const OUTCOME_BADGE: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  qualified: "default",
-  failed: "destructive",
-  error: "destructive",
-  not_interested: "outline",
-};
 
 function fmtDuration(s: number | null): string {
   if (!s) return "—";
@@ -110,8 +104,16 @@ export default function CallsView() {
           <tbody className="divide-y">
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                  No conversations yet. Launch a campaign and they will appear here.
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <div className="space-y-3">
+                    <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                      <Phone className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-medium">No conversations yet</p>
+                      <p className="text-sm text-muted-foreground">Launch a campaign and they will appear here.</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
@@ -124,13 +126,7 @@ export default function CallsView() {
                   </Link>
                 </td>
                 <td className="px-4 py-3">
-                  {c.outcome ? (
-                    <Badge variant={OUTCOME_BADGE[c.outcome] ?? "secondary"}>
-                      {c.outcome.replace("_", " ")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">in progress</Badge>
-                  )}
+                  <StatusBadge status={c.outcome ?? "running"} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{fmtDuration(c.durationSeconds)}</td>
                 <td className="px-4 py-3 text-muted-foreground max-w-sm truncate">{c.summary ?? "—"}</td>

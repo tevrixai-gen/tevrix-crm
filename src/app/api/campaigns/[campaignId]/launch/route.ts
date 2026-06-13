@@ -130,18 +130,28 @@ export async function POST(
     );
   }
 
-  const client = createDograhClient(
-    process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000",
-    tenant!.dograhApiKeyCiphertext
-  );
+  let client: ReturnType<typeof createDograhClient>;
+  try {
+    client = createDograhClient(
+      process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000",
+      tenant!.dograhApiKeyCiphertext
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "decryption failed";
+    return NextResponse.json(
+      { error: `Cannot decrypt voice engine credentials (${msg}). Contact support.` },
+      { status: 500 }
+    );
+  }
 
   const retry = (campaign.retryConfig as { maxAttempts?: number; retryOnNoAnswer?: boolean } | null) ?? {};
 
   let dograhCampaignId: string | null = null;
   try {
+    const workflowId = await client.resolveWorkflowUuid(tenant!.dograhWorkflowId);
     const engineCampaign = await client.createCampaign({
       name: `${tenant!.companyName ?? "Tevrix"} — ${campaign.name}`,
-      workflow_id: Number(tenant!.dograhWorkflowId) || 0,
+      workflow_id: workflowId,
       source_type: "inline",
       source_data: {
         contacts: audience.map((l) => ({

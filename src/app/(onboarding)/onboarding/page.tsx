@@ -11,6 +11,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     companyName: "",
     industry: "",
@@ -26,6 +27,7 @@ export default function OnboardingPage() {
 
   async function submit() {
     setLoading(true);
+    setError("");
     const res = await fetch("/api/onboarding", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -34,6 +36,8 @@ export default function OnboardingPage() {
     if (res.ok) {
       router.push("/pending");
     } else {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Something went wrong. Please try again.");
       setLoading(false);
     }
   }
@@ -45,6 +49,10 @@ export default function OnboardingPage() {
           <h1 className="text-2xl font-semibold">Set up your account</h1>
           <p className="text-muted-foreground text-sm mt-1">Step {step} of 2</p>
         </div>
+
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md text-center">{error}</p>
+        )}
 
         {step === 1 && (
           <Card>

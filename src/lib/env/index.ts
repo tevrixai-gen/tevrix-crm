@@ -8,6 +8,12 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.string().url(),
     DOGRAH_API_BASE_URL: z.string().url().default("https://api.dograh.com"),
     KMS_KEY_NAME: z.string().optional(),
+    // 32-byte AES-256-GCM key, base64-encoded (44 chars). Lives in GCP Secret
+    // Manager as `crm-encryption-key` (project tevrix-ecom-care).
+    CRM_ENCRYPTION_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string().length(44)
+        : z.string().length(44).optional(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   },
   client: {
@@ -19,6 +25,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DOGRAH_API_BASE_URL: process.env.DOGRAH_API_BASE_URL,
     KMS_KEY_NAME: process.env.KMS_KEY_NAME,
+    CRM_ENCRYPTION_KEY: process.env.CRM_ENCRYPTION_KEY,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },

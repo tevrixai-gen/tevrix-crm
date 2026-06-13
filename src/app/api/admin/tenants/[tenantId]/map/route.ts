@@ -5,6 +5,7 @@ import { getTenantById } from "@/lib/db/tenant-repo";
 import { writeAudit } from "@/lib/db/audit";
 import { db } from "@/lib/db";
 import { tenants } from "@/lib/db/schema";
+import { encryptSecret } from "@/lib/crypto/secrets";
 
 export async function POST(
   req: NextRequest,
@@ -44,12 +45,11 @@ export async function POST(
   };
 
   if (dograhApiKey) {
-    // In production this would be KMS-encrypted
-    updates.dograhApiKeyCiphertext = `plain:${dograhApiKey}`;
+    updates.dograhApiKeyCiphertext = encryptSecret(dograhApiKey);
   }
 
   if (dograhWebhookSecret) {
-    updates.dograhWebhookSecret = dograhWebhookSecret;
+    updates.dograhWebhookSecret = encryptSecret(dograhWebhookSecret);
   }
 
   await db.update(tenants).set(updates).where(eq(tenants.id, tenantId));

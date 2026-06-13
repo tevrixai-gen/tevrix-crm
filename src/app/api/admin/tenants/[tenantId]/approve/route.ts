@@ -18,7 +18,15 @@ export async function POST(
   const tenant = await getTenantById(tenantId);
   if (!tenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const target = tenant.dograhOrgId ? "ready" as const : "provisioning" as const;
+  const APPROVABLE: string[] = ["pending_approval", "provisioning_failed"];
+  if (!APPROVABLE.includes(tenant.status)) {
+    return NextResponse.json(
+      { error: `Cannot approve from status "${tenant.status}" — only pending or failed tenants can be approved` },
+      { status: 409 }
+    );
+  }
+
+  const target = "provisioning" as const;
   if (!canTransition(tenant.status, target)) {
     return NextResponse.json(
       { error: `Cannot transition from ${tenant.status} to ${target}` },

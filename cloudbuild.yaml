@@ -1,0 +1,17 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg
+      - NEXT_PUBLIC_APP_URL=${_APP_URL}
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/voice-agents/tevrix-crm:$_TAG
+      - .
+images:
+  - asia-south1-docker.pkg.dev/$PROJECT_ID/voice-agents/tevrix-crm:$_TAG
+substitutions:
+  _APP_URL: https://app.tevrixai.com
+  _TAG: ${SHORT_SHA}
+options:
+  machineType: E2_HIGHCPU_8
+timeout: 1200s

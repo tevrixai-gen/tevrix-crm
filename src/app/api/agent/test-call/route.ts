@@ -1,25 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { getTenantByUserId } from "@/lib/db/tenant-repo";
+import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { createDograhClient } from "@/lib/dograh/client";
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error, tenant } = await requireTenantApi({ allowPaused: false });
+  if (error) return error;
 
-  const tenant = await getTenantByUserId(session.user.id);
-  if (!tenant) return NextResponse.json({ error: "No tenant" }, { status: 404 });
-
-  if (!tenant.dograhApiKeyCiphertext || !tenant.dograhWorkflowId) {
+  if (!tenant!.dograhApiKeyCiphertext || !tenant!.dograhWorkflowId) {
     return NextResponse.json(
       { error: "Your agent is not yet connected to the voice engine. Contact support." },
       { status: 400 }
     );
-  }
-
-  if (tenant.status === "paused") {
-    return NextResponse.json({ error: "Account is paused" }, { status: 403 });
   }
 
   const body = await req.json();
@@ -29,14 +20,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "phoneNumber required" }, { status: 400 });
   }
 
-  const dograhBaseUrl = process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000";
-  const client = createDograhClient(dograhBaseUrl, tenant.dograhApiKeyCiphertext);
-
   try {
-    const result = await client.triggerTestCall(tenant.dograhWorkflowId, {
+    const dograhBaseUrl = process.env.DOGRAH_API_BASE_URL ?? "http://localhost:8000";
+    const client = createDograhClient(dograhBaseUrl, tenant!.dograhApiKeyCiphertext);
+
+    const workflowUuid = await client.resolveWorkflowUuid(tenant!.dograhWorkflowId);
+    const result = await client.triggerTestCall(workflowUuid, {
       phone_number: phoneNumber,
       initial_context: {
-        company_name: tenant.companyName,
+        company_name: tenant!.companyName,
         test_call: true,
       },
     });

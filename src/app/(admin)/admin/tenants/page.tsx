@@ -3,6 +3,7 @@ import { tenants, organization } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 
 export default async function TenantsListPage() {
   const rows = await db
@@ -13,9 +14,12 @@ export default async function TenantsListPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">All Tenants</h1>
+      <div>
+        <h1 className="text-2xl font-semibold">All Tenants</h1>
+        <p className="text-sm text-muted-foreground mt-1">{rows.length} registered</p>
+      </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
@@ -63,8 +67,16 @@ export default async function TenantsListPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                  No tenants yet
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <div className="space-y-3">
+                    <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-medium">No tenants yet</p>
+                      <p className="text-sm text-muted-foreground">Tenants will appear here after signup.</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
