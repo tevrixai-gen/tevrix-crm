@@ -19,9 +19,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await signIn.email({ email, password, callbackURL: "/dashboard" });
-    if (result.error) {
-      setError(result.error.message ?? "Invalid credentials");
+    try {
+      const result = await signIn.email({ email, password, callbackURL: "/dashboard" });
+      if (result.error) {
+        setError(result.error.message ?? "Invalid credentials");
+        setLoading(false);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   }

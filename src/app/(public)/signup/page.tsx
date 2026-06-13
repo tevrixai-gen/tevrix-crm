@@ -20,14 +20,19 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await signUp.email({
-      name,
-      email,
-      password,
-      callbackURL: "/onboarding",
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Could not create account");
+    try {
+      const result = await signUp.email({
+        name,
+        email,
+        password,
+        callbackURL: "/onboarding",
+      });
+      if (result.error) {
+        setError(result.error.message ?? "Could not create account");
+        setLoading(false);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   }
