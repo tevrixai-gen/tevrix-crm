@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { signUp } from "@/lib/auth/client";
@@ -15,6 +16,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,11 +27,12 @@ export default function SignupPage() {
         name,
         email,
         password,
-        callbackURL: "/onboarding",
       });
       if (result.error) {
         setError(result.error.message ?? "Could not create account");
         setLoading(false);
+      } else {
+        router.push("/onboarding");
       }
     } catch {
       setError("Something went wrong. Please try again.");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { signIn } from "@/lib/auth/client";
@@ -14,16 +15,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const result = await signIn.email({ email, password, callbackURL: "/dashboard" });
+      const result = await signIn.email({ email, password });
       if (result.error) {
         setError(result.error.message ?? "Invalid credentials");
         setLoading(false);
+      } else {
+        router.push("/dashboard");
       }
     } catch {
       setError("Something went wrong. Please try again.");
