@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Megaphone } from "lucide-react";
 
 interface Campaign {
@@ -49,7 +50,32 @@ export default function CampaignsList() {
         </Link>
       </div>
 
-      {!loading && rows.length === 0 ? (
+      {loading ? (
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Name</th>
+                <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="text-left px-4 py-3 font-medium">Progress</th>
+                <th className="text-left px-4 py-3 font-medium">Qualified</th>
+                <th className="text-left px-4 py-3 font-medium">Created</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : !loading && rows.length === 0 ? (
         <div className="border rounded-lg p-16 text-center space-y-4">
           <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
             <Megaphone className="h-6 w-6 text-muted-foreground" />

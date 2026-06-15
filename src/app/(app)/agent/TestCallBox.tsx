@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,20 +11,19 @@ import { Phone } from "lucide-react";
 export default function TestCallBox() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ ok?: boolean; error?: string; message?: string } | null>(null);
-
   async function makeTestCall() {
     setLoading(true);
-    setResult(null);
-
     const res = await fetch("/api/agent/test-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phoneNumber }),
     });
-
     const body = await res.json();
-    setResult(res.ok ? { ok: true, message: body.message } : { error: body.error });
+    if (res.ok) {
+      toast.success(body.message ?? "Call initiated — your phone will ring shortly");
+    } else {
+      toast.error(body.error ?? "Failed to place test call");
+    }
     setLoading(false);
   }
 
@@ -60,12 +60,6 @@ export default function TestCallBox() {
             </Button>
           </div>
         </div>
-        {result?.ok && (
-          <p className="text-sm text-green-600">{result.message}</p>
-        )}
-        {result?.error && (
-          <p className="text-sm text-destructive">{result.error}</p>
-        )}
       </CardContent>
     </Card>
   );

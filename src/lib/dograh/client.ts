@@ -127,6 +127,10 @@ export class DograhClient {
     await this.request(`/campaign/${campaignId}/pause`, { method: "POST" });
   }
 
+  async resumeCampaign(campaignId: number): Promise<void> {
+    await this.request(`/campaign/${campaignId}/resume`, { method: "POST" });
+  }
+
   async getCampaignRuns(
     campaignId: number,
     page = 1,

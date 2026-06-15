@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function AddLeadDialog({ open, onClose, onAdded }: Props) {
     });
 
     if (res.ok) {
+      toast.success("Lead added");
       setForm({ phone: "", name: "", email: "" });
       onAdded();
       onClose();

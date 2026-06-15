@@ -17,6 +17,31 @@ import { checkQuota, DEFAULT_PLAN_LIMITS, currentPeriod } from "@/lib/quota";
 import { isWithinCallingWindow } from "@/lib/working-hours";
 import { createDograhClient, DograhClientError } from "@/lib/dograh/client";
 
+interface StoredRetryConfig {
+  enabled?: boolean;
+  maxRetries?: number;
+  maxAttempts?: number;
+  retryDelaySeconds?: number;
+  retryOnNoAnswer?: boolean;
+  retryOnBusy?: boolean;
+  retryOnVoicemail?: boolean;
+}
+
+interface StoredScheduleConfig {
+  enabled?: boolean;
+  timezone?: string;
+  slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string }>;
+  windowStart?: string;
+  windowEnd?: string;
+}
+
+interface StoredCircuitBreaker {
+  enabled?: boolean;
+  failureThreshold?: number;
+  windowSeconds?: number;
+  minCallsInWindow?: number;
+}
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ campaignId: string }> }
@@ -90,18 +115,18 @@ export async function POST(
     return NextResponse.json({ error: quota.reason }, { status: 403 });
   }
 
-  // 5. Working-hours check in the tenant's timezone
-  const schedule = campaign.schedule as { windowStart?: string; windowEnd?: string } | null;
+  // 5. Working-hours check
+  const schedule = campaign.schedule as StoredScheduleConfig | null;
   const window = {
-    start: schedule?.windowStart ?? tenant!.callingWindowStart,
-    end: schedule?.windowEnd ?? tenant!.callingWindowEnd,
-    timezone: tenant!.timezone,
+    start: schedule?.windowStart ?? schedule?.slots?.[0]?.startTime ?? tenant!.callingWindowStart,
+    end: schedule?.windowEnd ?? schedule?.slots?.[0]?.endTime ?? tenant!.callingWindowEnd,
+    timezone: schedule?.timezone ?? tenant!.timezone,
   };
 
   if (!isWithinCallingWindow(window)) {
     return NextResponse.json(
       {
-        error: `Outside calling hours (${window.start}–${window.end} ${window.timezone}). Launch within the window — scheduled launches are coming soon.`,
+        error: `Outside calling hours (${window.start}–${window.end} ${window.timezone}). Launch within the window or adjust your schedule.`,
       },
       { status: 403 }
     );
@@ -144,29 +169,58 @@ export async function POST(
     );
   }
 
-  const retry = (campaign.retryConfig as { maxAttempts?: number; retryOnNoAnswer?: boolean } | null) ?? {};
+  const retry = (campaign.retryConfig as StoredRetryConfig | null) ?? {};
+
+  // Build the Dograh createCampaign payload with all advanced settings
+  const createPayload: Record<string, unknown> = {
+    name: `${tenant!.companyName ?? "Tevrix"} — ${campaign.name}`,
+    workflow_id: await client.resolveWorkflowUuid(tenant!.dograhWorkflowId),
+    source_type: "inline",
+    source_data: {
+      contacts: audience.map((l) => ({
+        phone_number: l.phone,
+        context: { lead_name: l.name ?? undefined, company_name: tenant!.companyName ?? undefined },
+      })),
+    },
+    max_concurrent_calls: Math.min(campaign.maxConcurrency, limits.maxConcurrency),
+    retry_config: {
+      enabled: retry.enabled ?? true,
+      max_retries: retry.maxRetries ?? retry.maxAttempts ?? 2,
+      retry_delay_seconds: retry.retryDelaySeconds ?? 120,
+      retry_on_no_answer: retry.retryOnNoAnswer ?? true,
+      retry_on_voicemail: retry.retryOnVoicemail ?? false,
+      retry_on_busy: retry.retryOnBusy ?? true,
+    },
+  };
+
+  // Pass schedule config if set
+  if (schedule?.enabled && schedule.slots && schedule.slots.length > 0) {
+    createPayload.schedule_config = {
+      enabled: true,
+      timezone: schedule.timezone ?? tenant!.timezone,
+      slots: schedule.slots.map((s) => ({
+        day_of_week: s.dayOfWeek,
+        start_time: s.startTime,
+        end_time: s.endTime,
+      })),
+    };
+  }
+
+  // Pass circuit breaker config if set
+  const cb = campaign.retryConfig as Record<string, unknown> | null;
+  const circuitBreaker = (cb?.circuitBreaker ?? null) as StoredCircuitBreaker | null;
+  if (circuitBreaker?.enabled) {
+    createPayload.circuit_breaker = {
+      enabled: true,
+      failure_threshold: circuitBreaker.failureThreshold ?? 0.5,
+      window_seconds: circuitBreaker.windowSeconds ?? 120,
+      min_calls_in_window: circuitBreaker.minCallsInWindow ?? 5,
+    };
+  }
 
   let dograhCampaignId: string | null = null;
   try {
-    const workflowId = await client.resolveWorkflowUuid(tenant!.dograhWorkflowId);
-    const engineCampaign = await client.createCampaign({
-      name: `${tenant!.companyName ?? "Tevrix"} — ${campaign.name}`,
-      workflow_id: workflowId,
-      source_type: "inline",
-      source_data: {
-        contacts: audience.map((l) => ({
-          phone_number: l.phone,
-          context: { lead_name: l.name ?? undefined, company_name: tenant!.companyName ?? undefined },
-        })),
-      },
-      max_concurrent_calls: Math.min(campaign.maxConcurrency, limits.maxConcurrency),
-      retry_config: {
-        max_retries: retry.maxAttempts ?? 2,
-        retry_on_no_answer: retry.retryOnNoAnswer ?? true,
-        retry_on_voicemail: true,
-        retry_on_busy: true,
-      },
-    });
+    const engineCampaign = await client.createCampaign(createPayload as unknown as Parameters<typeof client.createCampaign>[0]);
     dograhCampaignId = String(engineCampaign.id);
     await client.startCampaign(engineCampaign.id);
   } catch (err) {

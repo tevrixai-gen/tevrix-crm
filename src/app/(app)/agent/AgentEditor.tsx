@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,6 @@ export default function AgentEditor({ initial }: Props) {
     voiceId: initial?.voiceId ?? "",
   });
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
 
   function update(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -43,17 +43,16 @@ export default function AgentEditor({ initial }: Props) {
 
   async function save() {
     setSaving(true);
-    setMsg("");
     const res = await fetch("/api/agent", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     if (res.ok) {
-      setMsg("Saved");
+      toast.success("Agent saved");
       router.refresh();
     } else {
-      setMsg("Failed to save");
+      toast.error("Failed to save agent");
     }
     setSaving(false);
   }
@@ -118,16 +117,9 @@ export default function AgentEditor({ initial }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={saving}>
-            {saving ? "Saving..." : "Save Draft"}
-          </Button>
-          {msg && (
-            <span className={`text-sm ${msg === "Saved" ? "text-green-600" : "text-destructive"}`}>
-              {msg}
-            </span>
-          )}
-        </div>
+        <Button onClick={save} disabled={saving}>
+          {saving ? "Saving..." : "Save Draft"}
+        </Button>
       </CardContent>
     </Card>
   );

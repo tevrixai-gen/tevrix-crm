@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ChevronLeft, ChevronRight, Mic, Phone } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatPhoneDisplay } from "@/lib/phone";
 
 interface CallRow {
@@ -102,6 +103,15 @@ export default function CallsView() {
             </tr>
           </thead>
           <tbody className="divide-y">
+            {loading && rows.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+              </tr>
+            ))}
             {!loading && rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-14 text-center">

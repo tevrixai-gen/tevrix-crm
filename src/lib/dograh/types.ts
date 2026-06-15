@@ -64,14 +64,29 @@ export interface DograhCampaignCreateRequest {
   name: string;
   workflow_id: number | string;
   source_type: string;
-  source_data: { contacts: Array<{ phone_number: string; context?: Record<string, unknown> }> };
+  source_data?: { contacts: Array<{ phone_number: string; context?: Record<string, unknown> }> };
+  source_id?: string;
+  telephony_configuration_id?: number;
   max_concurrent_calls?: number;
   retry_config?: {
+    enabled?: boolean;
     max_retries: number;
+    retry_delay_seconds?: number;
     retry_on_voicemail?: boolean;
     retry_on_no_answer?: boolean;
     retry_on_busy?: boolean;
     retry_delay_minutes?: number;
+  };
+  schedule_config?: {
+    enabled?: boolean;
+    timezone?: string;
+    slots?: Array<{ day_of_week: number; start_time: string; end_time: string }>;
+  };
+  circuit_breaker?: {
+    enabled?: boolean;
+    failure_threshold?: number;
+    window_seconds?: number;
+    min_calls_in_window?: number;
   };
 }
 

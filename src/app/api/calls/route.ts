@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, count, desc, gte, type SQL } from "drizzle-orm";
+import { and, eq, count, desc, gte, isNotNull, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { calls } from "@/lib/db/schema";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
   const outcome = params.get("outcome");
   const campaignId = params.get("campaignId");
   const days = Number(params.get("days") ?? 0);
+  const hasRecording = params.get("hasRecording");
   const page = Math.max(1, Number(params.get("page") ?? 1));
   const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? 25)));
 
@@ -31,6 +32,9 @@ export async function GET(req: NextRequest) {
   }
   if (days > 0) {
     conditions.push(gte(calls.createdAt, new Date(Date.now() - days * 86400_000)));
+  }
+  if (hasRecording === "true") {
+    conditions.push(isNotNull(calls.recordingRef));
   }
 
   const where = and(...conditions);

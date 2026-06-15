@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Upload, Plus, ChevronLeft, ChevronRight, Ban, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import AddLeadDialog from "./AddLeadDialog";
 import { formatPhoneDisplay } from "@/lib/phone";
 
@@ -64,11 +66,16 @@ export default function LeadsView() {
   }, [load, search]);
 
   async function toggleDnc(lead: Lead) {
-    await fetch(`/api/leads/${lead.id}`, {
+    const res = await fetch(`/api/leads/${lead.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isDnc: !lead.isDnc }),
     });
+    if (res.ok) {
+      toast.success(lead.isDnc ? "Removed from Do-Not-Call" : "Marked as Do-Not-Call");
+    } else {
+      toast.error("Failed to update lead");
+    }
     load();
   }
 
@@ -121,6 +128,15 @@ export default function LeadsView() {
             </tr>
           </thead>
           <tbody className="divide-y">
+            {loading && rows.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-4 rounded" /></td>
+              </tr>
+            ))}
             {!loading && rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-14 text-center">
