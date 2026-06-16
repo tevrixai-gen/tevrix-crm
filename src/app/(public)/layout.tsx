@@ -42,15 +42,6 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       {/* Form panel */}
       <div className="flex-1 flex items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm">
-          <div className="mb-8 text-center lg:hidden">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <Zap className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-semibold tracking-tight">Tevrix AI</span>
-            </div>
-            <p className="text-sm text-muted-foreground">Voice AI for your business</p>
-          </div>
           {children}
         </div>
       </div>

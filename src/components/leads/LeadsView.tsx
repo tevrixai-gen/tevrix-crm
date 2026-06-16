@@ -5,7 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Upload, Plus, ChevronLeft, ChevronRight, Ban, Users } from "lucide-react";
+import { Upload, Plus, ChevronLeft, ChevronRight, Ban, Users, MoreHorizontal, Pencil, Phone, Trash2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AddLeadDialog from "./AddLeadDialog";
@@ -44,6 +49,8 @@ export default function LeadsView() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,6 +84,19 @@ export default function LeadsView() {
       toast.error("Failed to update lead");
     }
     load();
+  }
+
+  async function deleteLead(lead: Lead) {
+    setDeleting(true);
+    const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Lead deleted");
+      load();
+    } else {
+      toast.error("Failed to delete lead");
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   return (
@@ -167,15 +187,26 @@ export default function LeadsView() {
                   {new Date(lead.createdAt).toLocaleDateString("en-IN")}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={lead.isDnc ? "text-destructive" : "text-muted-foreground"}
-                    title={lead.isDnc ? "Remove from Do-Not-Call" : "Mark Do-Not-Call"}
-                    onClick={() => toggleDnc(lead)}
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    } />
+                    <DropdownMenuContent align="end" side="bottom">
+                      <DropdownMenuItem onClick={() => window.location.href = `/agent`}>
+                        <Phone className="h-4 w-4" /> Test call
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toggleDnc(lead)}>
+                        <Ban className="h-4 w-4" />
+                        {lead.isDnc ? "Remove from DNC" : "Mark Do-Not-Call"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(lead)}>
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}
@@ -196,6 +227,17 @@ export default function LeadsView() {
       )}
 
       <AddLeadDialog open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete lead?"
+        description={`This will permanently remove ${deleteTarget?.name || deleteTarget?.phone || "this lead"} and all associated data.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteLead(deleteTarget)}
+      />
     </div>
   );
 }

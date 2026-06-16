@@ -19,6 +19,26 @@ export async function getTenantById(tenantId: string) {
   return result[0] ?? null;
 }
 
+export async function updateTenant(
+  tenantId: string,
+  data: Partial<{
+    companyName: string | null;
+    companyWebsite: string | null;
+    industry: string | null;
+    dltEntityId: string | null;
+    callingWindowStart: string;
+    callingWindowEnd: string;
+    timezone: string;
+  }>
+) {
+  const [updated] = await db
+    .update(tenants)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId))
+    .returning();
+  return updated ?? null;
+}
+
 export async function getAllTenants() {
   return db.select().from(tenants).orderBy(tenants.createdAt);
 }
