@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ChevronLeft, ChevronRight, Mic, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Mic, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPhoneDisplay } from "@/lib/phone";
 
@@ -66,9 +66,16 @@ export default function CallsView() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Conversations</h1>
-        <p className="text-sm text-muted-foreground mt-1">{total} total</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Conversations</h1>
+          <p className="text-sm text-muted-foreground mt-1">{total} total</p>
+        </div>
+        <a href={`/api/calls/export${days ? `?days=${days}` : ""}`} download>
+          <Button variant="outline" size="sm" className="gap-1">
+            <Download className="h-4 w-4" /> Export
+          </Button>
+        </a>
       </div>
 
       <div className="flex gap-3">

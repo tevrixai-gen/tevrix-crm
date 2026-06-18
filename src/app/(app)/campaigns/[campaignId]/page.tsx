@@ -16,6 +16,7 @@ import {
   Play,
   XCircle,
   RotateCcw,
+  Copy,
   Phone,
   Mic,
   ChevronLeft,
@@ -160,6 +161,19 @@ export default function CampaignDetailPage() {
     router.push(`/campaigns/${data.id}`);
   }
 
+  async function duplicateCampaign() {
+    setBusy(true);
+    const res = await fetch(`/api/campaigns/${campaignId}/duplicate`, { method: "POST" });
+    const data = await res.json().catch(() => null);
+    if (res.ok) {
+      toast.success("Campaign duplicated");
+      router.push(`/campaigns/${data.id}`);
+    } else {
+      toast.error(data?.error ?? "Failed to duplicate");
+    }
+    setBusy(false);
+  }
+
   if (notFound) {
     return (
       <div className="p-6">
@@ -222,6 +236,9 @@ export default function CampaignDetailPage() {
               <RotateCcw className="h-4 w-4" /> Redial
             </Button>
           )}
+          <Button size="sm" variant="outline" className="gap-1" disabled={busy} onClick={duplicateCampaign}>
+            <Copy className="h-4 w-4" /> Duplicate
+          </Button>
           {["running", "paused", "draft"].includes(campaign.status) && (
             <Button size="sm" variant="destructive" className="gap-1" disabled={busy} onClick={() => setConfirmCancel(true)}>
               <XCircle className="h-4 w-4" /> Cancel

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Upload, Plus, ChevronLeft, ChevronRight, Ban, Users, MoreHorizontal, Pencil, Phone, Trash2 } from "lucide-react";
+import { Upload, Plus, Download, ChevronLeft, ChevronRight, Ban, Users, MoreHorizontal, Pencil, Phone, Trash2 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator,
@@ -107,6 +107,11 @@ export default function LeadsView() {
           <p className="text-sm text-muted-foreground mt-1">{total} total</p>
         </div>
         <div className="flex gap-2">
+          <a href="/api/leads/export" download>
+            <Button variant="outline" size="sm" className="gap-1">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          </a>
           <Link href="/leads/import">
             <Button variant="outline" size="sm" className="gap-1">
               <Upload className="h-4 w-4" /> Import CSV
