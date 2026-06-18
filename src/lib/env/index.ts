@@ -14,6 +14,9 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string().length(44)
         : z.string().length(44).optional(),
+    SMTP_USER: z.string().email().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   },
   client: {
@@ -26,6 +29,9 @@ export const env = createEnv({
     DOGRAH_API_BASE_URL: process.env.DOGRAH_API_BASE_URL,
     KMS_KEY_NAME: process.env.KMS_KEY_NAME,
     CRM_ENCRYPTION_KEY: process.env.CRM_ENCRYPTION_KEY,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    SMTP_FROM: process.env.SMTP_FROM,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
