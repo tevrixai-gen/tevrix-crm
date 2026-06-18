@@ -183,7 +183,11 @@ export default function LeadsView() {
             )}
             {rows.map((lead) => (
               <tr key={lead.id} className="hover:bg-muted/30">
-                <td className="px-4 py-3 font-medium">{lead.name ?? "—"}</td>
+                <td className="px-4 py-3 font-medium">
+                  <Link href={`/leads/${lead.id}`} className="text-primary hover:underline">
+                    {lead.name ?? "—"}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 font-mono text-xs">{formatPhoneDisplay(lead.phone)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={lead.status} />

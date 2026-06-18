@@ -1,8 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { leads } from "@/lib/db/schema";
+import { leads, calls } from "@/lib/db/schema";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ leadId: string }> }
+) {
+  const { error, tenant } = await requireTenantApi();
+  if (error) return error;
+
+  const { leadId } = await params;
+  const rows = await db
+    .select()
+    .from(leads)
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenant!.id)))
+    .limit(1);
+
+  if (!rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const callHistory = await db
+    .select({
+      id: calls.id,
+      phone: calls.phone,
+      outcome: calls.outcome,
+      durationSeconds: calls.durationSeconds,
+      summary: calls.summary,
+      createdAt: calls.createdAt,
+    })
+    .from(calls)
+    .where(and(eq(calls.leadId, leadId), eq(calls.tenantId, tenant!.id)))
+    .orderBy(desc(calls.createdAt))
+    .limit(50);
+
+  return NextResponse.json({ lead: rows[0], calls: callHistory });
+}
 
 const EDITABLE_STATUSES = [
   "new", "callback", "qualified", "not_interested", "dnc",
