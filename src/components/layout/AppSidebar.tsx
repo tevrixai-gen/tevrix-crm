@@ -12,6 +12,7 @@ import {
   Bot,
   BookOpen,
   ScrollText,
+  UsersRound,
   Settings,
   LogOut,
   Zap,
@@ -32,6 +33,7 @@ const nav = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/agent", label: "Your Agent", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/team", label: "Team", icon: UsersRound },
   { href: "/activity-log", label: "Activity Log", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
