@@ -11,12 +11,16 @@ import {
   BarChart3,
   Bot,
   BookOpen,
+  ScrollText,
   Settings,
   LogOut,
   Zap,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth/client";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 const nav = [
@@ -28,6 +32,7 @@ const nav = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/agent", label: "Your Agent", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/activity-log", label: "Activity Log", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -38,6 +43,7 @@ interface Props {
 
 export default function AppSidebar({ tenant, user }: Props) {
   const pathname = usePathname();
+  const { resolvedTheme, setTheme } = useTheme();
 
   return (
     <aside className="w-60 bg-sidebar text-sidebar-foreground flex flex-col h-full shrink-0">
@@ -81,15 +87,25 @@ export default function AppSidebar({ tenant, user }: Props) {
             <p className="text-xs text-sidebar-foreground/50 truncate">{user.email}</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 gap-3"
-          onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 gap-3"
+            onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 px-2"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          >
+            {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
     </aside>
   );

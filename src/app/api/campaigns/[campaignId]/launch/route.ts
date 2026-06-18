@@ -16,6 +16,7 @@ import { resolveAudience, type LeadFilter } from "@/lib/campaign-audience";
 import { checkQuota, DEFAULT_PLAN_LIMITS, currentPeriod } from "@/lib/quota";
 import { isWithinCallingWindow } from "@/lib/working-hours";
 import { createDograhClient, DograhClientError } from "@/lib/dograh/client";
+import { writeAudit } from "@/lib/db/audit";
 
 interface StoredRetryConfig {
   enabled?: boolean;
@@ -46,7 +47,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ campaignId: string }> }
 ) {
-  const { error, tenant } = await requireTenantApi({ allowPaused: false });
+  const { error, tenant, userId } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
 
   // 1. Tenant must be live
@@ -245,6 +246,15 @@ export async function POST(
       updatedAt: new Date(),
     })
     .where(eq(campaigns.id, campaign.id));
+
+  await writeAudit({
+    tenantId: tenant!.id,
+    actorId: userId!,
+    action: "launch_campaign",
+    resourceType: "campaign",
+    resourceId: campaign.id,
+    after: { leads: audience.length, dograhCampaignId },
+  });
 
   return NextResponse.json({
     ok: true,

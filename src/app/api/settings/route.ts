@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { getTenantById, updateTenant } from "@/lib/db/tenant-repo";
+import { writeAudit } from "@/lib/db/audit";
 
 export async function GET() {
   const { error, tenant } = await requireTenantApi({ allowPaused: true });
@@ -39,7 +40,7 @@ const ALLOWED_TIMEZONES = [
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export async function PATCH(req: NextRequest) {
-  const { error, tenant } = await requireTenantApi({ allowPaused: false });
+  const { error, tenant, userId } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
 
   const body = await req.json().catch(() => null);
@@ -75,6 +76,26 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
+  const before = {
+    companyName: tenant!.companyName,
+    companyWebsite: tenant!.companyWebsite,
+    industry: tenant!.industry,
+    callingWindowStart: tenant!.callingWindowStart,
+    callingWindowEnd: tenant!.callingWindowEnd,
+    timezone: tenant!.timezone,
+  };
+
   const updated = await updateTenant(tenant!.id, patch as Parameters<typeof updateTenant>[1]);
+
+  await writeAudit({
+    tenantId: tenant!.id,
+    actorId: userId!,
+    action: "update_settings",
+    resourceType: "tenant",
+    resourceId: tenant!.id,
+    before,
+    after: patch,
+  });
+
   return NextResponse.json({ ok: true, updated });
 }
