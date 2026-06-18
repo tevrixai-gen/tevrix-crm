@@ -2,7 +2,7 @@
 // Each event → calls row + lead status + campaign counters + usage ledger,
 // all in a single conceptual update.
 
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or, isNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   webhookInbox,
@@ -13,6 +13,9 @@ import {
   tenants,
 } from "@/lib/db/schema";
 import type { DograhWebhookEvent } from "./types";
+
+const MAX_ATTEMPTS = 5;
+const BASE_BACKOFF_MS = 30_000;
 
 function mapDispositionToOutcome(
   disposition?: string
@@ -51,9 +54,12 @@ export async function processInboxEntry(entryId: string): Promise<void> {
     .where(eq(webhookInbox.id, entryId))
     .limit(1);
 
-  if (!entry[0] || entry[0].status !== "pending") return;
+  const row = entry[0];
+  if (!row) return;
 
-  // Mark as processing
+  const isRetry = row.status === "failed" && (row.attempts ?? 0) < MAX_ATTEMPTS;
+  if (row.status !== "pending" && !isRetry) return;
+
   await db
     .update(webhookInbox)
     .set({ status: "processing" })
@@ -227,23 +233,57 @@ export async function processInboxEntry(entryId: string): Promise<void> {
       .where(eq(webhookInbox.id, entryId));
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    await db
-      .update(webhookInbox)
-      .set({ status: "failed", processingError: errMsg, processedAt: new Date() })
-      .where(eq(webhookInbox.id, entryId));
+    const currentAttempts = ((entry[0] as { attempts?: number }).attempts ?? 0) + 1;
+
+    if (currentAttempts >= MAX_ATTEMPTS) {
+      await db
+        .update(webhookInbox)
+        .set({
+          status: "dead_letter",
+          processingError: errMsg,
+          attempts: currentAttempts,
+          processedAt: new Date(),
+        })
+        .where(eq(webhookInbox.id, entryId));
+    } else {
+      const nextRetry = new Date(Date.now() + Math.pow(2, currentAttempts) * BASE_BACKOFF_MS);
+      await db
+        .update(webhookInbox)
+        .set({
+          status: "failed",
+          processingError: errMsg,
+          attempts: currentAttempts,
+          nextRetryAt: nextRetry,
+        })
+        .where(eq(webhookInbox.id, entryId));
+    }
   }
 }
 
 export async function processPendingInbox(): Promise<number> {
-  const pending = await db
+  const now = new Date();
+
+  const rows = await db
     .select({ id: webhookInbox.id })
     .from(webhookInbox)
-    .where(eq(webhookInbox.status, "pending"))
+    .where(
+      or(
+        eq(webhookInbox.status, "pending"),
+        and(
+          eq(webhookInbox.status, "failed"),
+          sql`${webhookInbox.attempts} < ${MAX_ATTEMPTS}`,
+          or(
+            isNull(webhookInbox.nextRetryAt),
+            lte(webhookInbox.nextRetryAt, now)
+          )
+        )
+      )
+    )
     .limit(100);
 
-  for (const row of pending) {
+  for (const row of rows) {
     await processInboxEntry(row.id);
   }
 
-  return pending.length;
+  return rows.length;
 }

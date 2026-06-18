@@ -30,8 +30,10 @@ RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-migrations.mjs ./scripts/run-migrations.mjs
+COPY --from=builder /app/node_modules/postgres ./node_modules/postgres
 
 USER nextjs
 ENV PORT=8080 HOSTNAME=0.0.0.0
 EXPOSE 8080
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node scripts/run-migrations.mjs && node server.js"]

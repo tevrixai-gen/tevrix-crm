@@ -408,6 +408,7 @@ export const webhookInboxStatusEnum = pgEnum("webhook_inbox_status", [
   "processing",
   "processed",
   "failed",
+  "dead_letter",
 ]);
 
 export const webhookInbox = pgTable(
@@ -419,7 +420,9 @@ export const webhookInbox = pgTable(
     eventType: text("event_type").notNull(),
     payload: jsonb("payload").notNull(),
     status: webhookInboxStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
     processingError: text("processing_error"),
+    nextRetryAt: timestamp("next_retry_at"),
     receivedAt: timestamp("received_at").notNull().defaultNow(),
     processedAt: timestamp("processed_at"),
   },
