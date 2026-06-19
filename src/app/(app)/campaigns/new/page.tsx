@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import CampaignAdvancedSettings, {
   DEFAULT_ADVANCED_CONFIG,
   type AdvancedConfig,
@@ -100,10 +101,8 @@ export default function NewCampaignPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-xl">
+      <Breadcrumbs items={[{ label: "Campaigns", href: "/campaigns" }, { label: "New Campaign" }]} />
       <div className="flex items-center gap-3">
-        <Link href="/campaigns">
-          <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-        </Link>
         <div>
           <h1 className="text-2xl font-semibold">New campaign</h1>
           <p className="text-sm text-muted-foreground">

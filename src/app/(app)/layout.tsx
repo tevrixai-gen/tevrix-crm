@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getTenantByUserId, getTenantById } from "@/lib/db/tenant-repo";
 import AppSidebar from "@/components/layout/AppSidebar";
 import ImpersonationBanner from "@/components/layout/ImpersonationBanner";
+import CommandPalette from "@/components/layout/CommandPalette";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <CommandPalette />
       {impersonation && (
         <ImpersonationBanner tenantName={impersonation.tenantName ?? "Unknown"} />
       )}

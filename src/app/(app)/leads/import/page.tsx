@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Upload, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 type Step = "upload" | "map" | "done";
 
@@ -105,10 +106,8 @@ export default function ImportPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
+      <Breadcrumbs items={[{ label: "Leads", href: "/leads" }, { label: "Import" }]} />
       <div className="flex items-center gap-3">
-        <Link href="/leads">
-          <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-        </Link>
         <h1 className="text-2xl font-semibold">Import leads</h1>
       </div>
 

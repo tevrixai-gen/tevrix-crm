@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Megaphone } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Campaign {
   id: string;
@@ -76,19 +77,14 @@ export default function CampaignsList() {
           </table>
         </div>
       ) : !loading && rows.length === 0 ? (
-        <div className="border rounded-lg p-16 text-center space-y-4">
-          <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-            <Megaphone className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium">No campaigns yet</p>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              Import leads first, then create a campaign and your agent starts calling.
-            </p>
-          </div>
-          <Link href="/campaigns/new">
-            <Button size="sm">Create your first campaign</Button>
-          </Link>
+        <div className="border rounded-lg">
+          <EmptyState
+            icon={<Megaphone className="h-8 w-8" />}
+            title="No campaigns yet"
+            description="Import leads first, then create a campaign and your agent starts calling."
+            actionLabel="Create your first campaign"
+            actionHref="/campaigns/new"
+          />
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">

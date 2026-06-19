@@ -13,6 +13,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/empty-state";
 import AddLeadDialog from "./AddLeadDialog";
 import { formatPhoneDisplay } from "@/lib/phone";
 
@@ -168,15 +169,13 @@ export default function LeadsView() {
                   {search || status ? (
                     <p className="text-muted-foreground">No leads match your filters.</p>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                        <Users className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-medium">No leads yet</p>
-                        <p className="text-sm text-muted-foreground">Import a CSV or add one manually to get started.</p>
-                      </div>
-                    </div>
+                    <EmptyState
+                      icon={<Users className="h-8 w-8" />}
+                      title="No leads yet"
+                      description="Import a CSV or add one manually to get started."
+                      actionLabel="Import leads"
+                      actionHref="/leads/import"
+                    />
                   )}
                 </td>
               </tr>

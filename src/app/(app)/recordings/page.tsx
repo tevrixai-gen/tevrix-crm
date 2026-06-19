@@ -13,6 +13,7 @@ import {
   Headphones,
 } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface RecordingRow {
   id: string;
@@ -212,18 +213,14 @@ export default function RecordingsPage() {
           <tbody className="divide-y">
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-14 text-center">
-                  <div className="space-y-3">
-                    <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <Headphones className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-medium">No recordings yet</p>
-                      <p className="text-sm text-muted-foreground">
-                        Recordings appear here after your agent completes calls.
-                      </p>
-                    </div>
-                  </div>
+                <td colSpan={6} className="px-4 py-0">
+                  <EmptyState
+                    icon={<Headphones className="h-8 w-8" />}
+                    title="No recordings yet"
+                    description="Recordings appear here after your agent completes calls."
+                    actionLabel="Create a campaign"
+                    actionHref="/campaigns/new"
+                  />
                 </td>
               </tr>
             )}

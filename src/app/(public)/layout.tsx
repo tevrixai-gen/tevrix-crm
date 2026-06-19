@@ -1,6 +1,11 @@
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { Zap, Phone, Users, BarChart3 } from "lucide-react";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session) redirect("/dashboard");
   return (
     <div className="min-h-screen flex">
       {/* Brand panel */}

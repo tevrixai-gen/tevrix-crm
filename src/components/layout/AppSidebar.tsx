@@ -18,11 +18,13 @@ import {
   Zap,
   Sun,
   Moon,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth/client";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import NotificationCenter from "@/components/layout/NotificationCenter";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -62,6 +64,14 @@ export default function AppSidebar({ tenant, user }: Props) {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <button
+          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors mb-2"
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="text-[10px] text-sidebar-foreground/40 bg-sidebar-accent/50 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+        </button>
         {nav.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -99,6 +109,7 @@ export default function AppSidebar({ tenant, user }: Props) {
             <LogOut className="h-4 w-4" />
             Sign out
           </Button>
+          <NotificationCenter />
           <Button
             variant="ghost"
             size="sm"

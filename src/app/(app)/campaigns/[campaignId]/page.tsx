@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 interface Campaign {
   id: string;
@@ -195,12 +196,10 @@ export default function CampaignDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
+      <Breadcrumbs items={[{ label: "Campaigns", href: "/campaigns" }, { label: campaign.name }]} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/campaigns">
-            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-3">
               {campaign.name}

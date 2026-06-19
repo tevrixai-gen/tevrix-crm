@@ -43,7 +43,17 @@ export default function TeamPage() {
 
   const loadData = async () => {
     try {
-      const org = await authClient.organization.getFullOrganization();
+      let org = await authClient.organization.getFullOrganization();
+      if (!org.data) {
+        const orgsRes = await fetch("/api/auth/organization/list");
+        if (orgsRes.ok) {
+          const orgs: { id: string }[] = await orgsRes.json();
+          if (orgs.length > 0) {
+            await authClient.organization.setActive({ organizationId: orgs[0].id });
+            org = await authClient.organization.getFullOrganization();
+          }
+        }
+      }
       if (!org.data) return;
       setOrgId(org.data.id);
       setMembers(

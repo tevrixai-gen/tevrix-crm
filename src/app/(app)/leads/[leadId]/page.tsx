@@ -14,6 +14,7 @@ import {
   ArrowLeft, Phone, Mail, Calendar, Tag, Ban, Save, Pencil, X,
 } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 interface Lead {
   id: string;
@@ -128,12 +129,10 @@ export default function LeadDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
+      <Breadcrumbs items={[{ label: "Leads", href: "/leads" }, { label: lead.name || formatPhoneDisplay(lead.phone) }]} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/leads">
-            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-3">
               {lead.name || formatPhoneDisplay(lead.phone)}

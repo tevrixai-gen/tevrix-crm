@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, CalendarClock, Ban, Play } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 interface CallDetail {
   id: string;
@@ -80,11 +81,9 @@ export default function CallDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
+      <Breadcrumbs items={[{ label: "Conversations", href: "/calls" }, { label: formatPhoneDisplay(call.phone) }]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/calls">
-            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
           <div>
             <h1 className="text-2xl font-semibold font-mono">{formatPhoneDisplay(call.phone)}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
