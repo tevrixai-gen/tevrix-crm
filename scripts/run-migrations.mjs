@@ -1,6 +1,22 @@
 import postgres from "postgres";
 
-const sql = postgres(process.env.DATABASE_URL);
+// Cloud SQL unix socket: extract `?host=/cloudsql/…` and pass as explicit option
+const raw = process.env.DATABASE_URL;
+let dbUrl = raw;
+let socketHost;
+try {
+  const u = new URL(raw);
+  const h = u.searchParams.get("host");
+  if (h?.startsWith("/")) {
+    u.searchParams.delete("host");
+    dbUrl = u.toString();
+    socketHost = h;
+  }
+} catch {}
+
+const sql = postgres(dbUrl, {
+  ...(socketHost ? { host: socketHost } : {}),
+});
 
 const migrations = [
   {
