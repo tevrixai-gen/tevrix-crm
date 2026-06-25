@@ -7,7 +7,7 @@ import { eq, and, gte, count, sql } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Phone, Users, TrendingUp, Clock,
+  Phone, Users, TrendingUp, Clock, IndianRupee, Timer,
   Bot, Upload, Megaphone, CheckCircle2, Circle, ArrowRight, BarChart3,
 } from "lucide-react";
 import { DEFAULT_PLAN_LIMITS, currentPeriod } from "@/lib/quota";
@@ -23,6 +23,7 @@ export default async function DashboardPage() {
   const [
     callCount, connectedCount, qualifiedCount, usage, attention, dailyRaw,
     tenantRow, leadCount, campaignCount, agentCount,
+    monthQualified, monthCalls,
   ] = await Promise.all([
     db.select({ count: count() }).from(calls)
       .where(and(eq(calls.tenantId, tenantId), gte(calls.createdAt, sevenDaysAgo))),
@@ -57,6 +58,17 @@ export default async function DashboardPage() {
     db.select({ count: count() }).from(leads).where(eq(leads.tenantId, tenantId)),
     db.select({ count: count() }).from(campaigns).where(eq(campaigns.tenantId, tenantId)),
     db.select({ count: count() }).from(agentProfiles).where(eq(agentProfiles.tenantId, tenantId)),
+    db.select({ count: count() }).from(calls)
+      .where(and(
+        eq(calls.tenantId, tenantId),
+        sql`${calls.outcome} = 'qualified'`,
+        sql`to_char(${calls.createdAt}, 'YYYY-MM') = ${period}`
+      )),
+    db.select({ count: count() }).from(calls)
+      .where(and(
+        eq(calls.tenantId, tenantId),
+        sql`to_char(${calls.createdAt}, 'YYYY-MM') = ${period}`
+      )),
   ]);
 
   const planTier = tenantRow?.planTier ?? "trial";
@@ -92,6 +104,17 @@ export default async function DashboardPage() {
     { label: "Qualified leads", value: String(qualifiedCount[0].count), icon: Users, sub: "Ready for your team", accent: "text-emerald-600 bg-emerald-50" },
     { label: "Minutes used", value: `${minutesUsed}/${limits.maxMinutesPerMonth}`, icon: Clock, sub: `This month (${period})`, accent: "text-violet-600 bg-violet-50" },
   ];
+
+  // ROI computation
+  const valuePerLead = Number(tenantRow?.valuePerQualifiedLead ?? 500);
+  const costPerMin = Number(tenantRow?.costPerMinute ?? 4);
+  const avgHumanMin = Number(tenantRow?.avgHumanCallMinutes ?? 5);
+  const monthQualifiedCount = monthQualified[0].count;
+  const monthCallsCount = monthCalls[0].count;
+  const qualifiedValue = monthQualifiedCount * valuePerLead;
+  const aiCost = minutesUsed * costPerMin;
+  const moneySaved = qualifiedValue - aiCost;
+  const agentHoursEquivalent = Math.round((monthCallsCount * avgHumanMin) / 60 * 10) / 10;
 
   const steps = [
     { done: hasAgent, label: "Configure your AI agent", href: "/agent", icon: Bot },
@@ -169,6 +192,54 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* ROI panel */}
+      <Card className="shadow-sm border-emerald-200/50 bg-emerald-50/30 dark:bg-emerald-950/10 dark:border-emerald-900/30">
+        <CardHeader>
+          <CardTitle className="text-base">What your AI did this month</CardTitle>
+          <p className="text-xs text-muted-foreground">{period}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Phone className="h-3.5 w-3.5" />
+                <span className="text-xs">Conversations</span>
+              </div>
+              <p className="text-xl font-bold">{monthCallsCount}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-xs">Qualified</span>
+              </div>
+              <p className="text-xl font-bold">{monthQualifiedCount}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Timer className="h-3.5 w-3.5" />
+                <span className="text-xs">Human hours saved</span>
+              </div>
+              <p className="text-xl font-bold">{agentHoursEquivalent}h</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-emerald-600">
+                <IndianRupee className="h-3.5 w-3.5" />
+                <span className="text-xs">Net value</span>
+              </div>
+              <p className={`text-xl font-bold ${moneySaved >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {moneySaved >= 0 ? "+" : ""}₹{Math.abs(moneySaved).toLocaleString("en-IN")}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                ₹{qualifiedValue.toLocaleString("en-IN")} qualified − ₹{aiCost.toLocaleString("en-IN")} AI cost
+              </p>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-3">
+            Adjust value inputs in <Link href="/settings" className="underline">Settings</Link>
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="shadow-sm">

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."crm_kind" ADD VALUE 'salesforce' BEFORE 'sheets';

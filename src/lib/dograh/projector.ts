@@ -11,6 +11,8 @@ import {
   campaigns,
   usageLedger,
   tenants,
+  crmConnections,
+  crmSyncEvents,
 } from "@/lib/db/schema";
 import type { DograhWebhookEvent } from "./types";
 
@@ -224,6 +226,31 @@ export async function processInboxEntry(entryId: string): Promise<void> {
           updatedAt: new Date(),
         })
         .where(eq(usageLedger.id, existingUsage[0].id));
+    }
+
+    // Enqueue CRM sync events for matching connections
+    const callRow = existingCall.length > 0
+      ? existingCall[0]
+      : (await db.select({ id: calls.id }).from(calls).where(eq(calls.dograhRunId, String(data.run_id))).limit(1))[0];
+
+    if (callRow) {
+      const activeConnections = await db
+        .select({ id: crmConnections.id, triggerRule: crmConnections.triggerRule })
+        .from(crmConnections)
+        .where(and(eq(crmConnections.tenantId, tenantId), eq(crmConnections.status, "active")));
+
+      for (const conn of activeConnections) {
+        const shouldPush =
+          conn.triggerRule === "on_any_completed" ||
+          (conn.triggerRule === "on_qualified" && outcome === "qualified");
+
+        if (shouldPush) {
+          await db
+            .insert(crmSyncEvents)
+            .values({ connectionId: conn.id, callId: callRow.id })
+            .onConflictDoNothing();
+        }
+      }
     }
 
     // Mark inbox entry as processed

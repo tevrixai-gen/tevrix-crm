@@ -19,6 +19,11 @@ export async function GET() {
     callingWindowEnd: row.callingWindowEnd,
     timezone: row.timezone,
     planTier: row.planTier,
+    escalationNumber: row.escalationNumber,
+    escalationRule: row.escalationRule,
+    valuePerQualifiedLead: row.valuePerQualifiedLead,
+    costPerMinute: row.costPerMinute,
+    avgHumanCallMinutes: row.avgHumanCallMinutes,
   });
 }
 
@@ -70,6 +75,39 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unsupported timezone" }, { status: 400 });
     }
     patch.timezone = body.timezone;
+  }
+
+  // Escalation fields
+  if ("escalationNumber" in body) {
+    const v = String(body.escalationNumber).trim();
+    if (v && !/^\+\d{7,15}$/.test(v)) {
+      return NextResponse.json({ error: "Escalation number must be E.164 format (+91...)" }, { status: 400 });
+    }
+    patch.escalationNumber = v || null;
+  }
+  if ("escalationRule" in body) {
+    const allowed = ["off", "on_qualified", "on_request", "on_keyword"];
+    if (!allowed.includes(body.escalationRule)) {
+      return NextResponse.json({ error: `Escalation rule must be one of: ${allowed.join(", ")}` }, { status: 400 });
+    }
+    patch.escalationRule = body.escalationRule;
+  }
+
+  // ROI inputs
+  if ("valuePerQualifiedLead" in body) {
+    const v = Number(body.valuePerQualifiedLead);
+    if (isNaN(v) || v < 0) return NextResponse.json({ error: "Invalid value per qualified lead" }, { status: 400 });
+    patch.valuePerQualifiedLead = String(v);
+  }
+  if ("costPerMinute" in body) {
+    const v = Number(body.costPerMinute);
+    if (isNaN(v) || v < 0) return NextResponse.json({ error: "Invalid cost per minute" }, { status: 400 });
+    patch.costPerMinute = String(v);
+  }
+  if ("avgHumanCallMinutes" in body) {
+    const v = Number(body.avgHumanCallMinutes);
+    if (isNaN(v) || v <= 0) return NextResponse.json({ error: "Invalid avg human call minutes" }, { status: 400 });
+    patch.avgHumanCallMinutes = String(v);
   }
 
   if (Object.keys(patch).length === 0) {

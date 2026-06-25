@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   Search,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth/client";
@@ -35,6 +36,7 @@ const nav = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/agent", label: "Your Agent", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/team", label: "Team", icon: UsersRound },
   { href: "/activity-log", label: "Activity Log", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },

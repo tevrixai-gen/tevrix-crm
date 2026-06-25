@@ -17,6 +17,11 @@ export default async function SettingsPage() {
         callingWindowEnd: tenant?.callingWindowEnd ?? "19:00",
         timezone: tenant?.timezone ?? "Asia/Kolkata",
         planTier: tenant?.planTier ?? "trial",
+        escalationNumber: tenant?.escalationNumber ?? "",
+        escalationRule: tenant?.escalationRule ?? "off",
+        valuePerQualifiedLead: tenant?.valuePerQualifiedLead ?? "500",
+        costPerMinute: tenant?.costPerMinute ?? "4",
+        avgHumanCallMinutes: tenant?.avgHumanCallMinutes ?? "5",
       }}
     />
   );

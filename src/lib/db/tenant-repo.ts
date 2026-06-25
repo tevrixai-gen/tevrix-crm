@@ -29,6 +29,11 @@ export async function updateTenant(
     callingWindowStart: string;
     callingWindowEnd: string;
     timezone: string;
+    escalationNumber: string | null;
+    escalationRule: string;
+    valuePerQualifiedLead: string;
+    costPerMinute: string;
+    avgHumanCallMinutes: string;
   }>
 ) {
   const [updated] = await db

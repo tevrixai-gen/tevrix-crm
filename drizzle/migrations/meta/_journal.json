@@ -15,6 +15,20 @@
       "when": 1781773800000,
       "tag": "0001_webhook_retry",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782377309347,
+      "tag": "0002_slippery_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782378762845,
+      "tag": "0003_empty_redwing",
+      "breakpoints": true
     }
   ]
 }

@@ -152,6 +152,13 @@ export const tenants = pgTable("tenants", {
   dograhApiKeyCiphertext: text("dograh_api_key_ciphertext"),
   dograhWebhookSecret: text("dograh_webhook_secret"),
   dograhWorkflowId: text("dograh_workflow_id"),
+  // Escalation
+  escalationNumber: text("escalation_number"),
+  escalationRule: text("escalation_rule").notNull().default("off"),
+  // ROI inputs
+  valuePerQualifiedLead: decimal("value_per_qualified_lead", { precision: 10, scale: 2 }).notNull().default("500"),
+  costPerMinute: decimal("cost_per_minute", { precision: 10, scale: 2 }).notNull().default("4"),
+  avgHumanCallMinutes: decimal("avg_human_call_minutes", { precision: 6, scale: 2 }).notNull().default("5"),
   // Timestamps
   approvedAt: timestamp("approved_at"),
   approvedBy: text("approved_by").references(() => user.id),
@@ -303,6 +310,8 @@ export const calls = pgTable(
     summary: text("summary"),
     gatheredData: jsonb("gathered_data"),
     recordingRef: text("recording_ref"),
+    escalatedTo: text("escalated_to"),
+    escalationOutcome: text("escalation_outcome"),
     costUsd: decimal("cost_usd", { precision: 8, scale: 4 }),
     startedAt: timestamp("started_at"),
     endedAt: timestamp("ended_at"),
@@ -427,6 +436,108 @@ export const webhookInbox = pgTable(
     processedAt: timestamp("processed_at"),
   },
   (t) => [unique("webhook_inbox_idempotency").on(t.source, t.externalId)]
+);
+
+// ─── Tevrix CRM: live_sessions ────────────────────────────────────────────────
+
+export const liveSessionModeEnum = pgEnum("live_session_mode", [
+  "listen",
+  "whisper",
+  "barge",
+]);
+
+export const liveSessions = pgTable(
+  "live_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    callId: uuid("call_id")
+      .notNull()
+      .references(() => calls.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    mode: liveSessionModeEnum("mode").notNull().default("listen"),
+    livekitRoom: text("livekit_room"),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    endedAt: timestamp("ended_at"),
+  },
+  (t) => [
+    index("live_sessions_active_idx").on(t.callId),
+    index("live_sessions_tenant_idx").on(t.tenantId, t.startedAt),
+  ]
+);
+
+// ─── Tevrix CRM: crm_connections ──────────────────────────────────────────────
+
+export const crmKindEnum = pgEnum("crm_kind", [
+  "hubspot",
+  "zoho",
+  "salesforce",
+  "sheets",
+  "webhook",
+]);
+
+export const crmConnectionStatusEnum = pgEnum("crm_connection_status", [
+  "active",
+  "revoked",
+  "error",
+]);
+
+export const crmConnections = pgTable(
+  "crm_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    kind: crmKindEnum("kind").notNull(),
+    displayName: text("display_name").notNull(),
+    configCiphertext: text("config_ciphertext"),
+    triggerRule: text("trigger_rule").notNull().default("on_qualified"),
+    status: crmConnectionStatusEnum("status").notNull().default("active"),
+    lastSyncAt: timestamp("last_sync_at"),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("crm_connections_tenant_kind_name").on(t.tenantId, t.kind, t.displayName),
+    index("crm_connections_tenant_idx").on(t.tenantId),
+  ]
+);
+
+// ─── Tevrix CRM: crm_sync_events ─────────────────────────────────────────────
+
+export const crmSyncStatusEnum = pgEnum("crm_sync_status", [
+  "pending",
+  "succeeded",
+  "failed",
+  "dead_lettered",
+]);
+
+export const crmSyncEvents = pgTable(
+  "crm_sync_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    connectionId: uuid("connection_id")
+      .notNull()
+      .references(() => crmConnections.id, { onDelete: "cascade" }),
+    callId: uuid("call_id")
+      .notNull()
+      .references(() => calls.id, { onDelete: "cascade" }),
+    status: crmSyncStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    lastAttemptAt: timestamp("last_attempt_at"),
+    error: text("error"),
+    externalRef: text("external_ref"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("crm_sync_events_unique").on(t.connectionId, t.callId),
+  ]
 );
 
 // ─── Tevrix CRM: audit_log ────────────────────────────────────────────────────
