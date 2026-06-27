@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { processPendingInbox } from "@/lib/dograh/projector";
+import { requireJobAuth } from "@/lib/auth/require-job-auth";
 
-// POST /api/jobs/process-inbox — called by Cloud Tasks or cron
-// Processes all pending webhook inbox entries through the projector
-export async function POST() {
-  // TODO: In production, verify OIDC token from Cloud Tasks/Scheduler
+export async function POST(req: NextRequest) {
+  const authError = requireJobAuth(req);
+  if (authError) return authError;
+
   const count = await processPendingInbox();
   return NextResponse.json({ processed: count });
 }

@@ -5,10 +5,14 @@ import { crmSyncEvents, crmConnections, calls, leads, campaigns } from "@/lib/db
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secrets";
 import { getAdapter } from "@/lib/crm";
 import type { CrmPushPayload } from "@/lib/crm/adapter";
+import { requireJobAuth } from "@/lib/auth/require-job-auth";
 
 const MAX_ATTEMPTS = 5;
 
 export async function POST(req: NextRequest) {
+  const authError = requireJobAuth(req);
+  if (authError) return authError;
+
   const body = await req.json().catch(() => null);
   if (!body?.syncEventId) {
     return NextResponse.json({ error: "Missing syncEventId" }, { status: 400 });

@@ -26,6 +26,12 @@ export async function GET(
     return NextResponse.json({ error: "No recording for this call" }, { status: 404 });
   }
 
-  // TODO(prod): exchange gs:// refs for a signed URL with a 15-minute expiry.
-  return NextResponse.json({ url: rows[0].recordingRef, expiresInSeconds: 900 });
+  const ref = rows[0].recordingRef;
+  if (ref.startsWith("gs://")) {
+    return NextResponse.json(
+      { error: "Recording signing not configured — set GCS_SERVICE_ACCOUNT_KEY" },
+      { status: 501 }
+    );
+  }
+  return NextResponse.json({ url: ref, expiresInSeconds: 900 });
 }

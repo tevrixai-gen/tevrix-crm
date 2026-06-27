@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { calls, tenants, campaigns } from "@/lib/db/schema";
 import { eq, and, isNull, lt } from "drizzle-orm";
 import { createDograhClient } from "@/lib/dograh/client";
+import { requireJobAuth } from "@/lib/auth/require-job-auth";
 
-// POST /api/jobs/reconcile — called by Cloud Scheduler every 10 min
-// Sweeps stale "calling" rows that never got a webhook completion,
-// and backfills missed data by reading from the Dograh API.
-export async function POST() {
-  // TODO: In production, verify OIDC token from Cloud Scheduler
+export async function POST(req: NextRequest) {
+  const authError = requireJobAuth(req);
+  if (authError) return authError;
 
   // Find calls that started more than 15 minutes ago but have no outcome
   const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000);

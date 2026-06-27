@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Upload, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 type Step = "upload" | "map" | "done";
@@ -68,10 +69,12 @@ export default function ImportPage() {
     const res = await fetch("/api/leads/import", { method: "POST", body: fd });
     const body = await res.json();
     if (!res.ok) {
+      toast.error(body.error ?? "Import failed");
       setError(body.error ?? "Import failed");
       setBusy(false);
       return;
     }
+    toast.success(`Imported ${body.imported} leads`);
     setReport(body);
     setStep("done");
     setBusy(false);

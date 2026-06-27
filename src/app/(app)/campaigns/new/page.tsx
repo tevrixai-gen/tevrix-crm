@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import CampaignAdvancedSettings, {
   DEFAULT_ADVANCED_CONFIG,
@@ -80,6 +81,7 @@ export default function NewCampaignPage() {
 
     const body = await res.json();
     if (!res.ok) {
+      toast.error(body.error ?? "Could not save campaign");
       setError(body.error ?? "Could not save campaign");
       setBusy(false);
       return;
@@ -89,11 +91,15 @@ export default function NewCampaignPage() {
       const launchRes = await fetch(`/api/campaigns/${body.id}/launch`, { method: "POST" });
       const launchBody = await launchRes.json();
       if (!launchRes.ok) {
+        toast.error(`Saved as draft — ${launchBody.error}`);
         setError(`Saved as draft — ${launchBody.error}`);
         setBusy(false);
         setTimeout(() => router.push(`/campaigns/${body.id}`), 2500);
         return;
       }
+      toast.success("Campaign launched");
+    } else {
+      toast.success("Campaign saved as draft");
     }
 
     router.push(`/campaigns/${body.id}`);

@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       )}
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar tenant={tenant} user={session.user} />
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-y-auto bg-background pt-14 lg:pt-0">
           {!impersonation && tenant.status === "paused" && (
             <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2 text-sm text-yellow-800">
               Your account is paused. Contact support to resume.

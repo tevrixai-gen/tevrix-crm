@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, CalendarClock, Ban, Play } from "lucide-react";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { toast } from "sonner";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 interface CallDetail {
@@ -59,6 +60,8 @@ export default function CallDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
+    if (res.ok) toast.success(label);
+    else toast.error("Action failed");
     setActionMsg(res.ok ? `${label} ✓` : "Action failed");
     await load();
     setBusy(false);

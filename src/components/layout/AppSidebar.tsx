@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,11 +21,13 @@ import {
   Moon,
   Search,
   Plug,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth/client";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import NotificationCenter from "@/components/layout/NotificationCenter";
 
 const nav = [
@@ -47,12 +50,12 @@ interface Props {
   user: { name: string; email: string };
 }
 
-export default function AppSidebar({ tenant, user }: Props) {
+function SidebarContent({ tenant, user, onNavigate }: Props & { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <aside className="w-60 bg-sidebar text-sidebar-foreground flex flex-col h-full shrink-0">
+    <>
       <div className="px-5 py-5 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
@@ -65,19 +68,23 @@ export default function AppSidebar({ tenant, user }: Props) {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         <button
-          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
+          onClick={() => {
+            onNavigate?.();
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
+          }}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors mb-2"
         >
           <Search className="h-4 w-4 shrink-0" />
           <span className="flex-1 text-left">Search</span>
-          <kbd className="text-[10px] text-sidebar-foreground/40 bg-sidebar-accent/50 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+          <kbd className="text-[10px] text-sidebar-foreground/40 bg-sidebar-accent/50 px-1.5 py-0.5 rounded font-mono hidden sm:inline">⌘K</kbd>
         </button>
         {nav.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
               pathname.startsWith(href)
@@ -122,6 +129,41 @@ export default function AppSidebar({ tenant, user }: Props) {
           </Button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function AppSidebar({ tenant, user }: Props) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-60 bg-sidebar text-sidebar-foreground flex-col h-full shrink-0">
+        <SidebarContent tenant={tenant} user={user} />
+      </aside>
+
+      {/* Mobile hamburger + Sheet */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center gap-3">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger
+            render={<Button variant="ghost" size="sm" className="text-sidebar-foreground p-1" />}
+          >
+            <Menu className="h-5 w-5" />
+          </SheetTrigger>
+          <SheetContent side="left" className="w-60 p-0 bg-sidebar text-sidebar-foreground" showCloseButton={false}>
+            <div className="flex flex-col h-full">
+              <SidebarContent tenant={tenant} user={user} onNavigate={() => setOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-md bg-sidebar-primary flex items-center justify-center">
+            <Zap className="h-3 w-3 text-sidebar-primary-foreground" />
+          </div>
+          <span className="font-semibold text-sm text-sidebar-foreground">Tevrix AI</span>
+        </div>
+      </div>
+    </>
   );
 }

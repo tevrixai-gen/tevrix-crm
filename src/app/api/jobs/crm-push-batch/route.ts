@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { eq, or, and, lte, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { crmSyncEvents } from "@/lib/db/schema";
+import { requireJobAuth } from "@/lib/auth/require-job-auth";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const authError = requireJobAuth(req);
+  if (authError) return authError;
   const pending = await db
     .select({ id: crmSyncEvents.id })
     .from(crmSyncEvents)
@@ -28,9 +31,12 @@ export async function POST() {
 
   for (const event of pending) {
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const secret = process.env.JOBS_SHARED_SECRET;
+      if (secret) headers["x-jobs-secret"] = secret;
       const res = await fetch(`${baseUrl}/api/jobs/crm-push`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ syncEventId: event.id }),
       });
       if (res.ok) {
