@@ -34,6 +34,7 @@ export class DograhClient {
     const url = `${this.baseUrl}/api/v1${path}`;
     const res = await fetch(url, {
       ...init,
+      signal: init?.signal ?? AbortSignal.timeout(8000),
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": this.apiKey,

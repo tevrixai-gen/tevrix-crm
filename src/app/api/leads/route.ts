@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { leads } from "@/lib/db/schema";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { normalizePhone } from "@/lib/phone";
+import { createLeadSchema } from "@/lib/schemas/lead";
 
 const LEAD_STATUSES = [
   "new", "queued", "calling", "connected", "not_answered",
@@ -59,10 +60,17 @@ export async function POST(req: NextRequest) {
   const { error, tenant } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
 
-  const body = await req.json();
-  const { phone, name, email, tags } = body;
+  const raw = await req.json().catch(() => null);
+  if (!raw) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
-  const normalized = normalizePhone(phone ?? "");
+  const parsed = createLeadSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  const { phone, name, email, tags } = parsed.data;
+
+  const normalized = normalizePhone(phone);
   if (!normalized.ok) {
     return NextResponse.json({ error: normalized.error }, { status: 400 });
   }

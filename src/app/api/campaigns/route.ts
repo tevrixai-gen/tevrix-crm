@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
 import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { resolveAudience, type LeadFilter } from "@/lib/campaign-audience";
+import { createCampaignSchema } from "@/lib/schemas/campaign";
 
 export async function GET() {
   const { error, tenant } = await requireTenantApi();
@@ -18,42 +19,18 @@ export async function GET() {
   return NextResponse.json({ campaigns: rows });
 }
 
-interface RetryConfigInput {
-  enabled?: boolean;
-  maxRetries?: number;
-  retryDelaySeconds?: number;
-  retryOnNoAnswer?: boolean;
-  retryOnBusy?: boolean;
-  retryOnVoicemail?: boolean;
-  maxAttempts?: number; // legacy field
-}
-
-interface ScheduleSlot {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-}
-
-interface ScheduleConfigInput {
-  enabled?: boolean;
-  timezone?: string;
-  slots?: ScheduleSlot[];
-  windowStart?: string; // legacy field
-  windowEnd?: string;   // legacy field
-}
-
-interface CircuitBreakerInput {
-  enabled?: boolean;
-  failureThreshold?: number;
-  windowSeconds?: number;
-  minCallsInWindow?: number;
-}
-
 export async function POST(req: NextRequest) {
   const { error, tenant } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
 
-  const body = await req.json();
+  const raw = await req.json().catch(() => null);
+  if (!raw) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+
+  const parsed = createCampaignSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
   const {
     name,
     leadFilter,
@@ -62,19 +39,7 @@ export async function POST(req: NextRequest) {
     scheduleConfig,
     schedule: legacySchedule,
     circuitBreaker,
-  } = body as {
-    name?: string;
-    leadFilter?: LeadFilter;
-    maxConcurrency?: number;
-    retryConfig?: RetryConfigInput;
-    scheduleConfig?: ScheduleConfigInput | null;
-    schedule?: { windowStart?: string; windowEnd?: string };
-    circuitBreaker?: CircuitBreakerInput | null;
-  };
-
-  if (!name?.trim()) {
-    return NextResponse.json({ error: "Campaign name is required" }, { status: 400 });
-  }
+  } = parsed.data;
 
   // Normalize retry config (support both old and new format)
   const normalizedRetry = retryConfig

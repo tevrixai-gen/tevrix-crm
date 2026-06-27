@@ -6,6 +6,7 @@ import { requireTenantApi } from "@/lib/auth/require-tenant";
 import { writeAudit } from "@/lib/db/audit";
 import { encryptSecret } from "@/lib/crypto/secrets";
 import { getAuthorizeUrl } from "@/lib/crm/oauth-urls";
+import { createIntegrationSchema } from "@/lib/schemas/integration";
 
 export async function GET() {
   const { error, tenant } = await requireTenantApi();
@@ -29,35 +30,33 @@ export async function GET() {
   return NextResponse.json({ connections: rows });
 }
 
-const VALID_KINDS = ["hubspot", "zoho", "salesforce", "sheets", "webhook"] as const;
 const OAUTH_KINDS = ["hubspot", "zoho", "salesforce"];
-const VALID_TRIGGERS = ["on_qualified", "on_any_completed", "on_keyword"] as const;
 
 export async function POST(req: NextRequest) {
   const { error, tenant, userId } = await requireTenantApi({ allowPaused: false });
   if (error) return error;
 
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  const raw = await req.json().catch(() => null);
+  if (!raw) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const kind = body.kind as string;
-  if (!VALID_KINDS.includes(kind as typeof VALID_KINDS[number])) {
-    return NextResponse.json({ error: `Invalid kind. Must be one of: ${VALID_KINDS.join(", ")}` }, { status: 400 });
+  const parsed = createIntegrationSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const displayName = String(body.displayName || kind).trim();
-  const triggerRule = VALID_TRIGGERS.includes(body.triggerRule) ? body.triggerRule : "on_qualified";
+  const { kind, triggerRule } = parsed.data;
+  const displayName = String(parsed.data.displayName || kind).trim();
 
   let configCiphertext: string | null = null;
-  if (body.config && typeof body.config === "object") {
-    configCiphertext = encryptSecret(JSON.stringify(body.config));
+  if (parsed.data.config && typeof parsed.data.config === "object") {
+    configCiphertext = encryptSecret(JSON.stringify(parsed.data.config));
   }
 
   const [row] = await db
     .insert(crmConnections)
     .values({
       tenantId: tenant!.id,
-      kind: kind as typeof VALID_KINDS[number],
+      kind,
       displayName,
       triggerRule,
       configCiphertext,

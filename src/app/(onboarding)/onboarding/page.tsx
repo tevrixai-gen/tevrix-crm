@@ -8,22 +8,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
+const STORAGE_KEY = "tevrix-onboarding-form";
+
+interface OnboardingForm {
+  companyName: string;
+  industry: string;
+  website: string;
+  dltEntityId: string;
+  callingWindowStart: string;
+  callingWindowEnd: string;
+}
+
+const defaultForm: OnboardingForm = {
+  companyName: "",
+  industry: "",
+  website: "",
+  dltEntityId: "",
+  callingWindowStart: "10:00",
+  callingWindowEnd: "19:00",
+};
+
+function loadSavedForm(): OnboardingForm {
+  if (typeof window === "undefined") return defaultForm;
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    return saved ? { ...defaultForm, ...JSON.parse(saved) } : defaultForm;
+  } catch {
+    return defaultForm;
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    companyName: "",
-    industry: "",
-    website: "",
-    dltEntityId: "",
-    callingWindowStart: "10:00",
-    callingWindowEnd: "19:00",
-  });
+  const [form, setForm] = useState(loadSavedForm);
 
   function update(field: keyof typeof form, value: string) {
-    setForm((f) => ({ ...f, [field]: value }));
+    setForm((f) => {
+      const next = { ...f, [field]: value };
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
   }
 
   async function submit() {
@@ -35,6 +62,7 @@ export default function OnboardingPage() {
       body: JSON.stringify(form),
     });
     if (res.ok) {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
       router.push("/pending");
     } else {
       const data = await res.json().catch(() => null);

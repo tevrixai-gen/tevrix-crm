@@ -34,13 +34,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-background focus:border focus:rounded-md focus:text-sm"
+      >
+        Skip to main content
+      </a>
       <CommandPalette />
       {impersonation && (
         <ImpersonationBanner tenantName={impersonation.tenantName ?? "Unknown"} />
       )}
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar tenant={tenant} user={session.user} />
-        <main className="flex-1 overflow-y-auto bg-background pt-14 lg:pt-0">
+        <main id="main-content" className="flex-1 overflow-y-auto bg-background pt-14 lg:pt-0">
+          <div aria-live="polite" aria-atomic="true" className="sr-only" />
           {!impersonation && tenant.status === "paused" && (
             <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2 text-sm text-yellow-800">
               Your account is paused. Contact support to resume.

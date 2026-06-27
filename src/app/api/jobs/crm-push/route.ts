@@ -7,6 +7,8 @@ import { getAdapter } from "@/lib/crm";
 import type { CrmPushPayload } from "@/lib/crm/adapter";
 import { requireJobAuth } from "@/lib/auth/require-job-auth";
 
+import { createHash } from "crypto";
+
 const MAX_ATTEMPTS = 5;
 
 export async function POST(req: NextRequest) {
@@ -90,6 +92,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const idempotencyKey = createHash("sha256")
+    .update(`${connection.id}:${call.id}`)
+    .digest("hex");
+
   const payload: CrmPushPayload = {
     leadName: leadRow?.name ?? null,
     leadPhone: call.phone,
@@ -105,7 +111,7 @@ export async function POST(req: NextRequest) {
   const attempts = event.attempts + 1;
 
   try {
-    const result = await adapter.push(payload, config);
+    const result = await adapter.push(payload, config, { idempotencyKey });
 
     if (result.ok) {
       await db

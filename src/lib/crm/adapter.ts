@@ -16,7 +16,11 @@ export interface CrmPushResult {
   error?: string;
 }
 
+export interface CrmPushOptions {
+  idempotencyKey?: string;
+}
+
 export interface CrmAdapter {
-  push(payload: CrmPushPayload, config: Record<string, unknown>): Promise<CrmPushResult>;
+  push(payload: CrmPushPayload, config: Record<string, unknown>, options?: CrmPushOptions): Promise<CrmPushResult>;
   testPush(config: Record<string, unknown>): Promise<CrmPushResult>;
 }
