@@ -34,11 +34,14 @@ if (globalForDb._pgClient && globalForDb._pgClientKey !== cacheKey) {
   globalForDb._pgClientKey = undefined;
 }
 
+const isPooler = dbUrl.includes(".pooler.supabase.com");
+
 const client =
   globalForDb._pgClient ??
   postgres(dbUrl, {
-    max: 10,
+    max: isPooler ? 1 : 10,
     idle_timeout: 30,
+    prepare: isPooler ? false : true,
     ...(socketHost ? { host: socketHost } : {}),
   });
 
