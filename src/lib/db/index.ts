@@ -39,8 +39,8 @@ const isPooler = dbUrl.includes(".pooler.supabase.com");
 const client =
   globalForDb._pgClient ??
   postgres(dbUrl, {
-    max: isPooler ? 1 : 10,
-    idle_timeout: 30,
+    max: isPooler ? 5 : 10,
+    idle_timeout: 20,
     prepare: isPooler ? false : true,
     ...(socketHost ? { host: socketHost } : {}),
   });
